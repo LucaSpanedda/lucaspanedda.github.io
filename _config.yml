@@ -22,7 +22,7 @@ url: lucaspanedda.github.io  # the base hostname and protocol for your site, e.g
 
 plugins:
   - jekyll-seo-tag
-  - kramdown-math-katex
-  
+
 kramdown:
-  math_engine: katex
+  math_engine: mathjax
+  input: GFM
