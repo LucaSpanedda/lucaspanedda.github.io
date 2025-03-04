@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en"><head><title>Digital Reverberation - a tutorial in Faust</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM Plex Mono&amp;family=Schibsted Grotesk:wght@400;700&amp;family=Source Sans Pro:ital,wght@0,400;0,600;1,400;1,600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="Luca Spanedda"/><meta property="og:title" content="Digital Reverberation - a tutorial in Faust"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="Digital Reverberation - a tutorial in Faust"/><meta name="twitter:description" content="Digital reverberation is a continually relevant and widely discussed topic in the realms of computer music and Digital Signal Processing, as well as electroacoustic music in general ..."/><meta property="og:description" content="Digital reverberation is a continually relevant and widely discussed topic in the realms of computer music and Digital Signal Processing, as well as electroacoustic music in general ..."/><meta property="og:image:type" content="image/webp"/><meta property="og:image:alt" content="Digital reverberation is a continually relevant and widely discussed topic in the realms of computer music and Digital Signal Processing, as well as electroacoustic music in general ..."/><meta property="og:image:width" content="1200"/><meta property="og:image:height" content="630"/><meta property="og:image:url" content="https://quartz.jzhao.xyz/static/og-image.png"/><meta name="twitter:image" content="https://quartz.jzhao.xyz/static/og-image.png"/><meta property="og:image" content="https://quartz.jzhao.xyz/static/og-image.png"/><meta property="twitter:domain" content="quartz.jzhao.xyz"/><meta property="og:url" content="https://quartz.jzhao.xyz/Posts/Digital-Reverberation---a-tutorial-in-Faust"/><meta property="twitter:url" content="https://quartz.jzhao.xyz/Posts/Digital-Reverberation---a-tutorial-in-Faust"/><link rel="icon" href="../static/icon.png"/><meta name="description" content="Digital reverberation is a continually relevant and widely discussed topic in the realms of computer music and Digital Signal Processing, as well as electroacoustic music in general ..."/><meta name="generator" content="Quartz"/><link href="../index.css" rel="stylesheet" type="text/css" spa-preserve/><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" spa-preserve/><script src="../prescript.js" type="application/javascript" spa-preserve></script><script type="application/javascript" spa-preserve>const fetchData = fetch("../static/contentIndex.json").then(data => data.json())</script></head><body data-slug="Posts/Digital-Reverberation---a-tutorial-in-Faust"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="..">Luca Spanedda</a></h2><div class="spacer mobile-only"></div><div class="search"><button class="search-button" id="search-button"><p>Search</p><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg></button><div id="search-container"><div id="search-space"><input autocomplete="off" id="search-bar" name="search" type="text" aria-label="Search for something" placeholder="Search for something"/><div id="search-layout" data-preview="true"></div></div></div></div><div class="explorer"><button type="button" id="mobile-explorer" class="collapsed hide-until-loaded" data-behavior="collapse" data-collapsed="collapsed" data-savestate="true" data-tree="[{&quot;path&quot;:&quot;Posts&quot;,&quot;collapsed&quot;:true}]" data-mobile="true" aria-controls="explorer-content" aria-expanded="false"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" id="desktop-explorer" class="title-button" data-behavior="collapse" data-collapsed="collapsed" data-savestate="true" data-tree="[{&quot;path&quot;:&quot;Posts&quot;,&quot;collapsed&quot;:true}]" data-mobile="false" aria-controls="explorer-content" aria-expanded="true"><h2>Explorer</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-content"><ul class="overflow" id="explorer-ul"><li><div class="folder-outer open"><ul style="padding-left:0;" class="content" data-folderul><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div data-folderpath="Posts"><button class="folder-button"><span class="folder-title">Posts</span></button></div></div><div class="folder-outer "><ul style="padding-left:1.4rem;" class="content" data-folderul="Posts"><li><a href="../Posts/About-this-filters-business---a-tutorial-on-Digital-Filters-in-Faust" data-for="Posts/About-this-filters-business---a-tutorial-on-Digital-Filters-in-Faust">About this filters business - a tutorial on Digital Filters in Faust</a></li><li><a href="../Posts/Digital-Reverberation---a-tutorial-in-Faust" data-for="Posts/Digital-Reverberation---a-tutorial-in-Faust">Digital Reverberation - a tutorial in Faust</a></li><li><a href="../Posts/Exploring-Pseudo-Random-and-Stochastic-Signals-in-Digital-Sound-Synthesis" data-for="Posts/Exploring-Pseudo-Random-and-Stochastic-Signals-in-Digital-Sound-Synthesis">Exploring Pseudo-Random and Stochastic Signals in Digital Sound Synthesis</a></li></ul></div></li><li><div class="folder-outer "><ul style="padding-left:0;" class="content" data-folderul></ul></div></li><li><a href="../Biography" data-for="Biography">Biography</a></li><li><a href="../Blog" data-for="Blog">Blog</a></li><li><a href="../Contact" data-for="Contact">Contact</a></li><li><a href="../CV" data-for="CV">CV</a></li><li><a href="../Links" data-for="Links">Links</a></li><li><a href="../Listen" data-for="Listen">Listen</a></li></ul></div></li><li id="explorer-end"></li></ul></div></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../Posts/">Posts</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>Digital Reverberation - a tutorial in Faust</a></div></nav><h1 class="article-title">Digital Reverberation - a tutorial in Faust</h1><p show-comma="true" class="content-meta"><span>32 min read</span></p></div></div><article class="popover-hint"><p>Digital reverberation is a continually relevant and widely discussed topic in the realms of computer music and Digital Signal Processing, as well as electroacoustic music in general. Its applications and studies have involved both commercial and academic sectors. Consequently, over time, a complex history has developed, characterized by numerous ramifications and implications, leading to a proliferation of various methods and implementation topologies. In this study, we will delve into the subject in detail, examining the main existing implementations.</p>
+<h2 id="reverberation">Reverberation<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#reverberation" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>Reverberation is the persistence of sound after it has been produced. It is an acoustic phenomenon related to the reflection of sound waves by an obstacle placed in front of the sound source. Assumptions that determine the perception of a reverberation phenomenon:</p>
+<ol>
+<li>The human ear cannot distinguish two sounds if they are perceived less than 100 milliseconds apart.</li>
+<li>The speed of sound in the air at 20°C is approximately 340 m/s.</li>
+<li>The sound source and the listener are in the same location facing the obstacle.</li>
+</ol>
+<p>Given these assumptions, in an open space, reverberation can be discussed when the obstacle is less than 17 meters from the sound source. Indeed, up to this distance, the path of the sound wave from the source to the obstacle and back is less than 34 meters, and therefore the sound takes less than 100 milliseconds to return to the starting point, blending into the listener’s ear with the original sound. If the obstacle is more than 17 meters away from the source, then the delay of the reflected sound compared to the direct sound is more than 100 milliseconds, and the two sounds are therefore distinct. In this case, it is called an echo.</p>
+<h3 id="duration-of-reverberation">Duration of Reverberation<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#duration-of-reverberation" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>The factors that influence the duration of reverberation are multiple. The most influential ones are:</p>
+<ol>
+<li>
+<p>Room size</p>
+<ul>
+<li>Larger rooms produce longer reverberations.</li>
+<li>Small rooms produce shorter reverberations.</li>
+</ul>
+</li>
+<li>
+<p>Materials</p>
+<ul>
+<li>Hard materials like ceramics and plastics reflect sound more.</li>
+<li>Soft materials like wood absorb much more sound.</li>
+</ul>
+<p>For these reasons related to materials, a small room like a bathroom has longer reverberation times than a large wooden room.</p>
+</li>
+</ol>
+<p>The best way to listen to the reverberation of a reverberant space is to produce an impulsive sound; like a clap of hands or a snap of fingers.</p>
+<h3 id="reverberation-in-music">Reverberation in Music<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#reverberation-in-music" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Music has made extensive use of reverberation for thousands of years. Archaeologists believe that reverberation produced by caves was used in ancient ceremonies. Many cathedrals in Europe have reverberations lasting more than 10 seconds, and the choral music of certain eras worked particularly well by exploiting the reverberation inside these cathedrals. In fact, the reverberation of individual notes overlaps on subsequent notes, transforming a monophonic melody into a polyphonic sound.</p>
+<h3 id="reflections">Reflections<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#reflections" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>A standard room has 6 surfaces:</p>
+<ul>
+<li>Right wall</li>
+<li>Left wall</li>
+<li>Front wall</li>
+<li>Back wall</li>
+<li>Ceiling</li>
+<li>Floor</li>
+</ul>
+<p>A sound, when produced, bounces off the surfaces and is subsequently heard, producing what are called:</p>
+<ol>
+<li>First-order reflections</li>
+</ol>
+<p>Each of these will produce another 6 echoes: 6 echoes, each bouncing off the 6 surfaces, will produce 36 echoes; these are called:</p>
+<ol start="2">
+<li>Second-order reflections</li>
+</ol>
+<p>producing a total of 42 echoes in a very short period of time, and so on… Of all these echoes, none is perceived individually, but rather their ensemble and dispersion over time are perceived. Reverberation is thus composed of thousands of echoes of the original sound that persist and decay over time.</p>
+<h3 id="artificial-reverberation-models">Artificial Reverberation Models<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#artificial-reverberation-models" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Reverberation is artificial when it is not present in the room where the recording is taking place but is instead added later.</p>
+<ol>
+<li>
+<p>Tape echo
+A particular magnetic tape recorder/player is used, which constantly moves a tape loop inside a mechanism with a fixed recording head and a mobile playback head. The signal recorded by the first head is read by the second and mixed with the original, generating the effect. These devices are bulky and heavy. Like in any tape recording, there is background noise similar to hiss, significantly higher than that produced with digital technologies.</p>
+</li>
+<li>
+<p>Spring reverb
+The signal is passed, through a transducer, through a metal spiral (the spring). At the other end of the spring, a transducer equivalent to the first one reintroduces the signal into the amplification circuit, mixing it with the original. The signal taken from the second transducer is slightly delayed compared to the one applied to the first, creating the reverberation effect in the listener’s ear.</p>
+</li>
+<li>
+<p>Chamber reverb
+Following the spring reverb model, in a box acoustically isolated from the outside, a curved tube is inserted to create the longest possible path. At one end of the tube is placed a small loudspeaker, while at the other end there is a microphone. The sound emitted by the loudspeaker will take some time to travel the entire tube and reach the microphone, thus generating the necessary delay. The signal taken from the microphone will be fed back into the mixing console, mixed with the original.</p>
+</li>
+<li>
+<p>Plate reverb
+Similar to spring reverb, but with a large metal plate instead of the spring. It has two transducers attached to its surface and works in a similar way, although its quality is significantly higher.</p>
+</li>
+</ol>
+<h2 id="digital-reverbs">Digital Reverbs<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#digital-reverbs" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>They are produced by a computer or dedicated DSP integrated circuits.
+There are integrated circuits on the market that include A/D and D/A converters,
+memories, and timing circuits.
+An acoustic signal is transduced and converted into numbers that enter memories.
+In fact, the bytes are “scrolled” from one bank to the next until the last one is reached.
+The digital signal taken from the last memory is then reconverted into analog and mixed
+with the original signal, obtaining the reverberation effect;
+the farther the read point from the write point, the longer the echo time will be.
+The size of these read and write memories is called delay line, and it is expressed in samples.
+The large capacity of RAM memories allows achieving delays
+of several seconds and therefore smoothly transition from reverb to echo.
+The strategy used afterwards is to feed back the output of the delay line by adding it to the input,
+thus creating a feedback circuit.
+All this process is done because modern computers are very powerful,
+but they are not yet powerful enough to generate all the reflections
+heard in a large room, one by one.
+Rather, the goal of creating digital reverbs is to implement models and strategies
+to replicate the impression of the reverberation of a room.
+The replication process has generated in the history of digital reverbs true and proper typical sounds different from each other
+which can be implemented and preferred by musicians for aesthetic reasons.</p>
+<h1 id="digital-reverb-in-faust">Digital Reverb in FAUST<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#digital-reverb-in-faust" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>Experiments and algorithms of digital reverb models in the FAUST language (GRAME)</p>
+<h2 id="delay-lines-in-faust">Delay Lines in Faust<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#delay-lines-in-faust" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>Delay lines in Faust are divided into the following categories:
+mem - indicates a single sample delay
+@ - indicates a number (e.g., 44100) of variable delay samples
+x’- x indicates any input and: ’ a sample delay, ”(2), etc.
+rdtable - indicates a read-only table
+rwtable - indicates a read and write table.</p>
+<p>Through delay lines,
+we can create a Dirac impulse, which represents
+our minimum unit, namely the single sample
+by putting a number 1 and subtracting the same value from it
+but doing it at a delayed sample.</p>
+<p>Example:</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="faust" data-theme="github-light github-dark"><code data-language="faust" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>// import Standard Faust library </span></span>
+<span data-line><span>// https://github.com/grame-cncm/faustlibraries/ </span></span>
+<span data-line><span>import(&quot;stdfaust.lib&quot;); </span></span>
+<span data-line><span>  </span></span>
+<span data-line><span>// Dirac Impulse with delay lines - Impulse at Compile Time </span></span>
+<span data-line><span>dirac = 1 - 1'; </span></span>
+<span data-line><span>process = dirac, dirac; </span></span></code></pre></figure>
+<h2 id="some-methods-for-implementing-recursive-circuits-in-the-faust-language">Some Methods for Implementing Recursive Circuits in the Faust Language<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#some-methods-for-implementing-recursive-circuits-in-the-faust-language" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>We will illustrate 3 main methods:</p>
+<ul>
+<li>
+<p>Writing the code line with internal recursion:</p>
+<p>in this way the tilde ~ operator sends the signal
+output to itself, to the first available input
+creating a feedback circuit.
+One way to force the operator to point to a certain point
+in the code, is to put parentheses (), in this way ~
+will point to the input before the parenthesis.</p>
+</li>
+<li>
+<p>A second method consists of using with{} .</p>
+<p>You can define a function in which are passed
+the various arguments of the function that control
+the parameters of the code,
+and say that that function is equal to
+exit from the with with ~ _</p>
+<p>Example:</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="faust" data-theme="github-light github-dark"><code data-language="faust" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>    function_with(argument1, argument2) = out_with ~ _</span></span>
+<span data-line><span>     with{  </span></span>
+<span data-line><span>      section1 = _ * argument1;</span></span>
+<span data-line><span>      section2 = argument1 * argument2;</span></span>
+<span data-line><span>      out_with = section2;</span></span>
+<span data-line><span>      };</span></span>
+<span data-line><span>    </span></span>
+<span data-line><span>      where out_with ~ _ returns to itself.</span></span></code></pre></figure>
+</li>
+</ul>
+<p>Moreover, with in Faust allows declaring variables
+that are not pointed to from outside the code but only
+from the belonging function; in this case
+the function to which with belongs is “function_with”.</p>
+<ul>
+<li>
+<p>A third method is to use the letrec environment.</p>
+<p>with this method we can write a signal
+recursively, similar to how
+recurrence equations are written.</p>
+</li>
+</ul>
+<p>Example:</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="faust" data-theme="github-light github-dark"><code data-language="faust" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>// import Standard Faust library  </span></span>
+<span data-line><span>// https://github.com/grame-cncm/faustlibraries/  </span></span>
+<span data-line><span>import(&quot;stdfaust.lib&quot;); </span></span>
+<span data-line><span>  </span></span>
+<span data-line><span>// letrec function </span></span>
+<span data-line><span>lowpass(cf, x) = y </span></span>
+<span data-line><span>// letrec definition </span></span>
+<span data-line><span>     letrec { </span></span>
+<span data-line><span>         'y = b0 * x - a1 * y; </span></span>
+<span data-line><span>     } </span></span>
+<span data-line><span>     // inside the letrec function </span></span>
+<span data-line><span>     with { </span></span>
+<span data-line><span>         b0 = 1 + a1; </span></span>
+<span data-line><span>         a1 = exp(-w(cf)) * -1; </span></span>
+<span data-line><span>         w(f) = 2 * ma.PI * f / ma.SR; </span></span>
+<span data-line><span>     }; </span></span>
+<span data-line><span>  </span></span>
+<span data-line><span> // Output of the letrec function </span></span>
+<span data-line><span> process = lowpass(100, no.noise) &lt;: si.bus(2); </span></span></code></pre></figure>
+<h2 id="conversion-of-milliseconds-to-samples-and-vice-versa">Conversion of Milliseconds to Samples and Vice Versa<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#conversion-of-milliseconds-to-samples-and-vice-versa" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="conversion-from-milliseconds-to-samples">Conversion from Milliseconds to Samples<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#conversion-from-milliseconds-to-samples" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Function for Conversion from Milliseconds to Samples:
+we input the time in milliseconds,
+and the function gives us the value in samples.</p>
+<p>For example, if we have a sampling frequency
+of 48,000 samples per second,
+it means that 1000ms (1 second) is represented
+by 48,000 parts, and therefore a single unit
+of time like 1 ms. Corresponds digitally to 48 samples.</p>
+<p>For this reason, we divide the sampling frequency
+by 1000ms, resulting in a total number of samples
+that corresponds to 1 ms. in the digital world at
+a certain sampling frequency.</p>
+<p>And then we multiply the result of this operation
+by the total number of milliseconds we want to obtain as
+a representation in samples.
+If we multiply *10. For example, we will get
+480 samples at a sampling frequency
+of 48,000 samples per second.</p>
+<h3 id="conversion-from-samples-to-milliseconds">Conversion from Samples to Milliseconds<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#conversion-from-samples-to-milliseconds" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Function for Conversion from Samples to Milliseconds:
+we input a total number of samples,
+of which we need to know the overall duration
+in milliseconds based on our sampling frequency.</p>
+<p>We know that a sampling frequency
+corresponds to a set of values that express
+together the duration of 1 second (1000 ms).</p>
+<p>It means, for example,
+that at a sampling frequency of 48,000
+samples per second,
+1000 milliseconds are represented by 48,000 parts.
+So if we divide our 1000ms. /
+into the 48,000 parts which are the samples of our system,
+we would get the duration in milliseconds of a single sample
+at that sampling frequency,
+in this case therefore:
+1000 / 48,000 = 0.02ms.
+And so the duration in milliseconds of a single sample at 48,000
+samples per second, is 0.02 milliseconds.
+If we multiply the obtained number *
+a total number of samples, we will get the time in milliseconds
+of those samples for that sampling frequency used.</p>
+<p>Obviously, as can be deduced from the considerations,
+as the sampling frequency increases,
+the temporal duration of a single sample decreases,
+and thus a greater definition.</p>
+<h2 id="phase-alignment-of-feedback">Phase Alignment of Feedback<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#phase-alignment-of-feedback" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>In the digital domain, the feedback of a
+delay line, when applied, costs by default one sample delay.
+Feedback = 1 Sample</p>
+<p>At the moment I decide therefore to put
+inside the feedback a number
+of delay samples,
+we can take for example 10 samples
+in our delay line, it means that,
+The direct signal will come out for delay samples at:</p>
+<p>input in the delay signal <span>⇒</span> output from the delay 10samp</p>
+<p>1st Feedback:
+output from the delay at 10samp + 1 feedback =
+input in the delay 11samp <span>⇒</span> output from the delay 21samp</p>
+<p>2nd Feedback:
+output from the delay at 21samp + 1 feedback =
+input in the delay 22samp <span>⇒</span> output from the delay 32samp</p>
+<p>3rd Feedback:
+output from the delay at 32samp + 1 feedback =
+input in the delay 33samp <span>⇒</span> output from the delay 43samp</p>
+<p>and so on…</p>
+<p>we can therefore notice immediately that we will not have
+the correct delay value required inside the same,
+because of the sample delay that occurs at the moment
+when I decide to create a feedback circuit.
+if we use the method of subtracting one sample from the delay line,
+we will have this result:</p>
+<p>input in the delay signal <span>⇒</span> -1, output from the delay 9samp</p>
+<p>1st Feedback:
+output from the delay at 9samp + 1 feedback =
+input in the delay 10samp <span>⇒</span> -1, output from the delay 19samp</p>
+<p>2nd Feedback:
+output from the delay at 19samp + 1 feedback =
+input in the delay 20samp <span>⇒</span> -1, output from the delay 29samp</p>
+<p>3rd Feedback:
+output from the delay at 29samp + 1 feedback =
+input in the delay 30samp <span>⇒</span> -1, output from the delay 39samp</p>
+<p>and so on…</p>
+<p>we can therefore notice that with this method,
+compared to the previous one we will have as input to the delay line
+always the number of delay samples required.
+But we notice that from the first output of the delayed signal
+subtracting -1 we have one sample delay
+less than we would like.
+To realign everything, we just need to add one sample delay
+to the overall output of the circuit, thus having from the first output:</p>
+<p>input in the delay signal <span>⇒</span> -1, output from the delay 9samp +1 = 10out</p>
+<p>1st Feedback:
+output from the delay at 9samp + 1 feedback =
+input in the delay 10samp <span>⇒</span> -1, output from the delay 19samp +1 = 20out</p>
+<p>and so on…</p>
+<p>Let’s proceed with an implementation:</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="faust" data-theme="github-light github-dark"><code data-language="faust" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>// import Standard Faust library  </span></span>
+<span data-line><span>// https://github.com/grame-cncm/faustlibraries/  </span></span>
+<span data-line><span>import(&quot;stdfaust.lib&quot;); </span></span>
+<span data-line><span>  </span></span>
+<span data-line><span>sampdel = ma.SR;  </span></span>
+<span data-line><span>// sample rate - ma.SR </span></span>
+<span data-line><span>  </span></span>
+<span data-line><span>process =   _ :  </span></span>
+<span data-line><span>             // input signal goes in </span></span>
+<span data-line><span>             +~ @(sampdel -1) *(0.8)  </span></span>
+<span data-line><span>             // delay line with feedback: +~ </span></span>
+<span data-line><span>             : mem </span></span>
+<span data-line><span>             // output goes to a single sample delay </span></span>
+<span data-line><span>             &lt;: si.bus(2); </span></span></code></pre></figure>
+<h2 id="t60-decay-calculation">T60 Decay Calculation<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#t60-decay-calculation" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>The term “T60” in the context of digital reverberation refers to the reverberation time. The reverberation time is a measure of the duration for which sound persists in a space after the sound source has stopped. It indicates how quickly the sound energy decreases over time.</p>
+<p>The T60 value represents the time it takes for the sound level to decrease by 60 decibels (dB) compared to its initial value. In other words, it is the time taken for the sound energy to decay by 60 dB. A long T60 indicates prolonged reverberation, while a short T60 indicates shorter reverberation.</p>
+<p>The formula below uses the relationship between the T60 decay time and the number of filter samples to calculate the amplification gain necessary. The result of the calculation is a linear value ranging from 0 to 1, representing the amplification to be applied to the filter feedback.</p>
+<p>Insert the following arguments into the function:</p>
+<ul>
+<li>
+<p>The value in samples of the filter
+you are using for the delay.</p>
+</li>
+<li>
+<p>The decay value in T60
+(decay time of 60 dB in seconds)</p>
+</li>
+<li>
+<p>= GET as output from the function,
+the value to be passed as amplification
+to the filter feedback to achieve
+the desired T60 decay time</p>
+</li>
+</ul>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="faust" data-theme="github-light github-dark"><code data-language="faust" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>// T60 DECAY TIME from Milliseconds</span></span>
+<span data-line><span>// (ms, T60) = ms delay of the filter, seconds we want for t60 decay</span></span>
+<span data-line><span>t60_ms(ms, t60) = pow(0.001, (ms / 1000) / t60);</span></span>
+<span data-line> </span>
+<span data-line><span>// formula 2 </span></span>
+<span data-line><span>// (samps,seconds) = give: samples of the filter, seconds we want for t60 decay </span></span>
+<span data-line><span>dect60(samps,seconds) = 1/(10^((3*(((1000 / ma.SR)*samps)/1000))/seconds)); </span></span></code></pre></figure>
+<h1 id="digital-filters">Digital Filters<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#digital-filters" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h3 id="onezero-filter-1st-order-fir">ONEZERO FILTER (1st Order FIR)<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#onezero-filter-1st-order-fir" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>_ represents the input signal, (_ denotes the signal)
+it is then split into two parallel paths &lt;:
+one delayed by one sample _’ (’ denotes one sample delay)
+and one without delay , _ (, denotes transition to the second path)
+they are then summed into a single signal :> _ ;
+the delayed signal has a feedforward amplitude control * feedforward
+there is a general amplitude control * outgain
+on the output function onezeroout</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="faust" data-theme="github-light github-dark"><code data-language="faust" data-theme="github-light github-dark" style="display:grid;"><span data-line><span> // import Standard Faust library </span></span>
+<span data-line><span> // https://github.com/grame-cncm/faustlibraries/ </span></span>
+<span data-line><span> import(&quot;stdfaust.lib&quot;); </span></span>
+<span data-line><span>  </span></span>
+<span data-line><span>  </span></span>
+<span data-line><span> // (G) = G=give amplitude 0-1(open-close) to the delayed signal </span></span>
+<span data-line><span> ozf(G) = _ &lt;: ((_ : mem * G), _) :> +; </span></span>
+<span data-line><span>  </span></span>
+<span data-line><span> // out </span></span>
+<span data-line><span> process = ozf(0.1); </span></span></code></pre></figure>
+<h3 id="onepole-filter-1st-order-iir">ONEPOLE FILTER (1st Order IIR)<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#onepole-filter-1st-order-iir" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>+~ is the summation, and the feedback
+of the arguments inside parentheses ()
+_ represents the input signal, (_ denotes the signal)
+delayed by one sample _ (automatically in the feedback)
+which enters : into the gain control of the feedback * 1-feedback
+the same feedback controls the input amplification
+of the signal not injected into the feedback
+there is a general amplitude control * outgain
+on the output function onezeroout</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="faust" data-theme="github-light github-dark"><code data-language="faust" data-theme="github-light github-dark" style="display:grid;"><span data-line><span> // import Standard Faust library </span></span>
+<span data-line><span> // https://github.com/grame-cncm/faustlibraries/ </span></span>
+<span data-line><span> import(&quot;stdfaust.lib&quot;); </span></span>
+<span data-line><span>  </span></span>
+<span data-line><span> // (G)  = give amplitude 1-0 (open-close) for the lowpass cut </span></span>
+<span data-line><span> // (CF) = Frequency Cut in HZ </span></span>
+<span data-line><span> OPF(CF,x) = OPFFBcircuit ~ _  </span></span>
+<span data-line><span>     with{ </span></span>
+<span data-line><span>         g(x) = x / (1.0 + x); </span></span>
+<span data-line><span>         G = tan(CF * ma.PI / ma.SR):g; </span></span>
+<span data-line><span>         OPFFBcircuit(y) = x*G+(y*(1-G)); </span></span>
+<span data-line><span>         }; </span></span>
+<span data-line><span>  </span></span>
+<span data-line><span> process = OPF(20000) &lt;: si.bus(2); </span></span></code></pre></figure>
+<h3 id="onepole-topology-preserving-transforms-tpt">ONEPOLE Topology Preserving Transforms (TPT)<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#onepole-topology-preserving-transforms-tpt" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>TPT version of the One-Pole Filter by Vadim Zavalishin
+reference: (by Will Pirkle)
+<a href="http://www.willpirkle.com/Downloads/AN-4VirtualAnalogFilters.2.0.pdf" class="external">http://www.willpirkle.com/Downloads/AN-4VirtualAnalogFilters.2.0.pdf<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="faust" data-theme="github-light github-dark"><code data-language="faust" data-theme="github-light github-dark" style="display:grid;"><span data-line><span> // import Standard Faust library </span></span>
+<span data-line><span> // https://github.com/grame-cncm/faustlibraries/ </span></span>
+<span data-line><span> import(&quot;stdfaust.lib&quot;); </span></span>
+<span data-line><span>  </span></span>
+<span data-line><span> OnepoleTPT(CF,x) = circuit ~ _ : ! , _ </span></span>
+<span data-line><span>     with { </span></span>
+<span data-line><span>         g = tan(CF * ma.PI / ma.SR); </span></span>
+<span data-line><span>         G = g / (1.0 + g); </span></span>
+<span data-line><span>         circuit(sig) = u , lp </span></span>
+<span data-line><span>             with { </span></span>
+<span data-line><span>                 v = (x - sig) * G; </span></span>
+<span data-line><span>                 u = v + lp; </span></span>
+<span data-line><span>                 lp = v + sig; </span></span>
+<span data-line><span>             }; </span></span>
+<span data-line><span>     }; </span></span>
+<span data-line><span>  </span></span>
+<span data-line><span> // out </span></span>
+<span data-line><span> process = OnepoleTPT(100); </span></span></code></pre></figure>
+<h3 id="feedforward-comb-filter-nth-order-fir">FEEDFORWARD COMB FILTER (Nth Order FIR)<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#feedforward-comb-filter-nth-order-fir" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>_ represents the input signal, (_ denotes the signal)
+it is then split into two parallel paths &lt;:
+one delayed by @(delaysamples) samples
+(thus value to be passed externally)
+and one without delay , _ (, denotes transition to the second path)
+they are then summed into a single signal :> _ ;</p>
+<p>In the feedback, one sample of delay is already present by default,
+hence delaysamples-1.</p>
+<p>the delayed signal has a feedforward amplitude control * feedforward</p>
+<p>there is a general amplitude control * outgain
+on the output function onezeroout</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="faust" data-theme="github-light github-dark"><code data-language="faust" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>// import Standard Faust library </span></span>
+<span data-line><span>// https://github.com/grame-cncm/faustlibraries/ </span></span>
+<span data-line><span>import(&quot;stdfaust.lib&quot;); </span></span>
+<span data-line><span> </span></span>
+<span data-line><span>// (t,g) = delay time in samples, filter gain 0-1 </span></span>
+<span data-line><span>ffcf(t, g, x) = (x@(t) * g), x :> +; </span></span>
+<span data-line><span>process = _ * .1 : ffcf(100, 1); </span></span></code></pre></figure>
+<h3 id="feedback-comb-filter-nth-order-iir">FEEDBACK COMB FILTER (Nth Order IIR)<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#feedback-comb-filter-nth-order-iir" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>+~ is the summation, and the feedback
+of the arguments inside parentheses ()
+_ represents the input signal, (_ denotes the signal)
+delayed by @(delaysamples) samples
+(thus value to be passed externally)
+which enters : into the gain control of the feedback * feedback</p>
+<p>In the feedback, one sample of delay is already present by default,
+hence delaysamples-1.</p>
+<p>there is a general amplitude control * outgain
+on the output function combfeedbout</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="faust" data-theme="github-light github-dark"><code data-language="faust" data-theme="github-light github-dark" style="display:grid;"><span data-line><span> // import Standard Faust library </span></span>
+<span data-line><span> // https://github.com/grame-cncm/faustlibraries/ </span></span>
+<span data-line><span> import(&quot;stdfaust.lib&quot;); </span></span>
+<span data-line><span>  </span></span>
+<span data-line><span> // Feedback Comb Filter. FBComb(Del,G,signal)  </span></span>
+<span data-line><span> // (Del, G) = DEL=delay time in samples. G=feedback gain 0-1 </span></span>
+<span data-line><span> fbcf(del, g, x) = loop ~ _  </span></span>
+<span data-line><span>     with { </span></span>
+<span data-line><span>         loop(y) = x + y@(del - 1) * g; </span></span>
+<span data-line><span>     }; </span></span>
+<span data-line><span>  </span></span>
+<span data-line><span> process = _ * .1 : fbcf(4480, .9); </span></span></code></pre></figure>
+<h3 id="lowpass-feedback-comb-filter-nth-order-iir">Lowpass FEEDBACK COMB FILTER (Nth Order IIR)<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#lowpass-feedback-comb-filter-nth-order-iir" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>similar to the comb filter, but within the feedback,
+following the feedback enters the signal : into the onepole.
+The onepole is a lowpass where the cutoff
+frequency can be controlled between 0. and 1.
+In the feedback, one sample of delay is already present by default,
+hence delaysamples-1.</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="faust" data-theme="github-light github-dark"><code data-language="faust" data-theme="github-light github-dark" style="display:grid;"><span data-line><span> // import Standard Faust library </span></span>
+<span data-line><span> // https://github.com/grame-cncm/faustlibraries/ </span></span>
+<span data-line><span> import(&quot;stdfaust.lib&quot;); </span></span>
+<span data-line><span>  </span></span>
+<span data-line><span> // LPFBC(Del, FCut) = give: delay samps, -feedback gain 0-1-, lowpass Freq.Cut HZ </span></span>
+<span data-line><span> lpfbcf(del, cf, x) = loop ~ _ : !, _ </span></span>
+<span data-line><span>     with { </span></span>
+<span data-line><span>         onepole(CF, x) = loop ~ _  </span></span>
+<span data-line><span>             with{ </span></span>
+<span data-line><span>                 g(x) = x / (1.0 + x); </span></span>
+<span data-line><span>                 G = tan(CF * ma.PI / ma.SR):g; </span></span>
+<span data-line><span>                 loop(y) = x * G + (y * (1 - G)); </span></span>
+<span data-line><span>             }; </span></span>
+<span data-line><span>         loop(y) = x + y@(del - 1) &lt;: onepole(cf), _; </span></span>
+<span data-line><span>     }; </span></span>
+<span data-line><span> process = _ * .1 : lpfbcf(2000, 10000); </span></span></code></pre></figure>
+<h3 id="allpass-filter">ALLPASS FILTER<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#allpass-filter" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>from the sum (+ transitions : to a cable _ and a split &lt;:
+then @delay and gain, in feedback ~ to the initial sum.
+filtergain controls the amplitude of the two gain states,
+which in the filter are the same value but positive and negative,
+one side *-filtergain and one side *+filtergain.
+In the feedback, one sample of delay is already present by default,
+hence delaysamples-1.
+To maintain the delay threshold of the value delaysamples,
+a mem delay (of the subtracted sample) is added
+at the end</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="faust" data-theme="github-light github-dark"><code data-language="faust" data-theme="github-light github-dark" style="display:grid;"><span data-line><span> // Allpass</span></span>
+<span data-line><span> // (t,g) = give: delay in samples, feedback gain 0-1</span></span>
+<span data-line><span> apf(t, g) =    _ : (+ : _ &lt;: @ (t  - 1), * (- g)) ~ * (g) : mem, _ : + : _;</span></span>
+<span data-line><span> process = _ * .1 &lt;: apf(100, .5); </span></span></code></pre></figure>
+<h3 id="modulated-allpass-filter">Modulated ALLPASS FILTER<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#modulated-allpass-filter" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="faust" data-theme="github-light github-dark"><code data-language="faust" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>// delay modulated : mod = mod source +/- 1, t = del in samps, tMod = mod in samps</span></span>
+<span data-line><span>delaymod(mod, t, tMod) = de.fdelay(tMax, modIndx)</span></span>
+<span data-line><span>with{</span></span>
+<span data-line><span>    tMax = t + tMod;</span></span>
+<span data-line><span>    modIndx = t + mod * tMod;</span></span>
+<span data-line><span>};</span></span>
+<span data-line> </span>
+<span data-line><span>// modulated Allpass filter</span></span>
+<span data-line><span>apfMod(mod, t, tMod, g) = _ : (+ : _ &lt;: delaymod(mod, t - 1, tMod), * (- g)) ~ * (g) : mem, _ : + : _;</span></span>
+<span data-line> </span>
+<span data-line><span>process = apfMod(os.osc(0.10), 19200, 100, 0.7)</span></span></code></pre></figure>
+<h1 id="topologies-and-design-of-digital-reverbs">Topologies and Design of Digital Reverbs<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#topologies-and-design-of-digital-reverbs" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h3 id="chamberlin-reverb">Chamberlin Reverb<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#chamberlin-reverb" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>The Chamberlin Reverb is named after Hal Chamberlin, a pioneer in digital sound processing. This reverberation model was first introduced in his seminal book, Musical Applications of Microprocessors (1979).
+At its core, the Chamberlin Reverb uses a network of all-pass filters (APF) to create a dense and natural-sounding reverberation effect.
+The model is particularly effective at simulating small acoustic spaces, such as rooms or chambers, and is designed with simplicity in mind, making it computationally efficient. This efficiency made it suitable for the early digital processors with limited resources.</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="faust" data-theme="github-light github-dark"><code data-language="faust" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>// Chamberlin Reverb</span></span>
+<span data-line><span>chamberlinReverb = ap3ch &lt;: apout1ch, apout2ch</span></span>
+<span data-line><span>with {</span></span>
+<span data-line><span>    ap3ch = apf(msasamps(49.6), 0.75) : apf(msasamps(34.75), 0.72) : apf(msasamps(24.18), 0.691);</span></span>
+<span data-line><span>    apout1ch = apf(msasamps(17.85), 0.649) : apf(msasamps(10.98), 0.662);</span></span>
+<span data-line><span>    apout2ch = apf(msasamps(18.01), 0.646) : apf(msasamps(10.82), 0.666);</span></span>
+<span data-line><span>};</span></span>
+<span data-line><span>process = chamberlinReverb;</span></span></code></pre></figure>
+<h3 id="chamberlin-reverb-with-decay-t60">Chamberlin Reverb with Decay T60<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#chamberlin-reverb-with-decay-t60" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>This version includes a decay time T60 control in the comb-allpass filters, representing the time required for the signal to decay by 60 dB.</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="faust" data-theme="github-light github-dark"><code data-language="faust" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>// Chamberlin Reverb with T60 Decay</span></span>
+<span data-line><span>chamberlinDecay(seconds) = ap3ch &lt;: apout1ch, apout2ch</span></span>
+<span data-line><span>with {</span></span>
+<span data-line><span>    ap3ch = apf(msasamps(49.6), t60_ms(49.6, seconds)) : </span></span>
+<span data-line><span>            apf(msasamps(34.75), t60_ms(34.75, seconds)) : </span></span>
+<span data-line><span>            apf(msasamps(24.18), t60_ms(24.18, seconds));</span></span>
+<span data-line><span>    apout1ch = apf(msasamps(17.85), t60_ms(17.85, seconds)) : </span></span>
+<span data-line><span>               apf(msasamps(10.98), t60_ms(10.98, seconds));</span></span>
+<span data-line><span>    apout2ch = apf(msasamps(18.01), t60_ms(18.01, seconds)) : </span></span>
+<span data-line><span>               apf(msasamps(10.82), t60_ms(10.82, seconds));</span></span>
+<span data-line><span>};</span></span>
+<span data-line><span>process = chamberlinDecay(10);</span></span></code></pre></figure>
+<h3 id="schroeder-chowning-satrev-reverberator">Schroeder-Chowning SATREV Reverberator<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#schroeder-chowning-satrev-reverberator" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>The Schroeder-Chowning SATREV Reverberator is a landmark in the history of algorithmic reverb design, based on the design proposed by Manfred Schroeder and refined by John Chowning, this model combines 4 parallel comb filters with 3 serial all-pass filters (drawn from a 1971 MUS10 software listing).</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="faust" data-theme="github-light github-dark"><code data-language="faust" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>// Schroeder-Chowning SATREV Reverberator</span></span>
+<span data-line><span>satreverb = _ * 0.2 &lt;: fbcfSchroeder(901, 0.805), </span></span>
+<span data-line><span>    fbcfSchroeder(778, 0.827), fbcfSchroeder(1011, 0.783), </span></span>
+<span data-line><span>    fbcfSchroeder(1123, 0.764) :> apf(125, 0.7) : </span></span>
+<span data-line><span>    apf(42, 0.7) : apf(12, 0.7) &lt;: _ , _ * -1;</span></span>
+<span data-line><span>process = satreverb;</span></span></code></pre></figure>
+<h3 id="schroeder-samson-box-reverberator">Schroeder Samson Box Reverberator<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#schroeder-samson-box-reverberator" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>In October 1977, CCRMA took delivery of the Systems Concepts Digital Synthesizer, affectionately known as the “Samson Box,” named after its designer Peter Samson.
+This reverberator developed for this system, which remains known as JCREV, builds upon the earlier reverberation models by Schroeder but expanding on them with improvements that catered to more complex, real-time audio processing requirements.
+This model includes 3 serial all-pass filters and 4 parallel comb filters.</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="faust" data-theme="github-light github-dark"><code data-language="faust" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>// Schroeder Samson Box Reverberator</span></span>
+<span data-line><span>jcreverb = _ * 0.06 : apf(347, 0.7) : apf(113, 0.7) : </span></span>
+<span data-line><span>    apf(37, 0.7) &lt;: fbcfSchroeder(1601, 0.802), fbcfSchroeder(1867, 0.733), </span></span>
+<span data-line><span>    fbcfSchroeder(2053, 0.753), fbcfSchroeder(2251, 0.733) : </span></span>
+<span data-line><span>    mix_mtx</span></span>
+<span data-line><span>with {</span></span>
+<span data-line><span>    mix_mtx = _,_,_,_ &lt;: psum, - psum, asum, - asum : _,_,_,_;</span></span>
+<span data-line><span>    psum = _,_,_,_ :> _;</span></span>
+<span data-line><span>    asum = *(-1), _, *(-1), _ :> _;</span></span>
+<span data-line><span>};</span></span>
+<span data-line><span>process = jcreverb;</span></span></code></pre></figure>
+<h3 id="moorer-reverb">Moorer Reverb<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#moorer-reverb" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>James A. Moorer’s 1979 design for digital reverberation was one of the earliest to build upon the work of Manfred R. Schroeder, refining and expanding on his ideas in significant ways. Moorer’s design, as outlined in his seminal paper “About This Reverberation Business”, introduced crucial improvements to digital reverb algorithms that continue to influence modern reverberation models.
+A key innovation in Moorer’s approach was the use of a tapped delay line to simulate early reflections—an important feature in the perception of acoustic space. The early reflections, rather than the later reverberant tail, play a more prominent role in how we perceive the size and shape of an environment. The tapped delay line in Moorer’s model could be adjusted with specific delay times and gain structures to approximate the reflections of an actual acoustic space, such as a concert hall. In his article, Moorer provides a 19-tap delay line based on a geometric simulation of the Boston Symphony Hall. He omits the first tap, which has a delay time of 0 and a gain of 1, as it represents the original dry signal.
+Additionally, Moorer enhanced his reverb model by incorporating a first-order low-pass filter in the feedback loop of the six comb filters. This filter simulates the absorption effects of air, which are influenced by factors such as humidity, temperature, the frequency of sound, and the distance from the sound source. Moorer discusses how atmospheric conditions affect the intensity of sound as it travels, and this low-pass filter helped account for the natural damping of higher frequencies over distance.
+This combination of early reflections through a tapped delay line and the low-pass feedback filters for air absorption marked a significant step forward in creating more realistic digital reverberation, and Moorer’s work laid the foundation for many of the reverberation algorithms in use today.</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="faust" data-theme="github-light github-dark"><code data-language="faust" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>// Moorer Reverb</span></span>
+<span data-line><span>moorerReverb = _ * 0.1 : earlyReflections &lt;: combSection + _</span></span>
+<span data-line><span>with {</span></span>
+<span data-line><span>    earlyReflections =  _ &lt;: </span></span>
+<span data-line><span>        (_ @ sasamps(0.0043)) * 0.841,</span></span>
+<span data-line><span>        (_ @ sasamps(0.0215)) * 0.504,</span></span>
+<span data-line><span>        (_ @ sasamps(0.0225)) * 0.491,</span></span>
+<span data-line><span>        (_ @ sasamps(0.0268)) * 0.379,</span></span>
+<span data-line><span>        (_ @ sasamps(0.0270)) * 0.380,</span></span>
+<span data-line><span>        (_ @ sasamps(0.0298)) * 0.346,</span></span>
+<span data-line><span>        (_ @ sasamps(0.0458)) * 0.289,</span></span>
+<span data-line><span>        (_ @ sasamps(0.0485)) * 0.272,</span></span>
+<span data-line><span>        (_ @ sasamps(0.0572)) * 0.192,</span></span>
+<span data-line><span>        (_ @ sasamps(0.0587)) * 0.193,</span></span>
+<span data-line><span>        (_ @ sasamps(0.0595)) * 0.217,</span></span>
+<span data-line><span>        (_ @ sasamps(0.0612)) * 0.181,</span></span>
+<span data-line><span>        (_ @ sasamps(0.0707)) * 0.180,</span></span>
+<span data-line><span>        (_ @ sasamps(0.0708)) * 0.181,</span></span>
+<span data-line><span>        (_ @ sasamps(0.0726)) * 0.176,</span></span>
+<span data-line><span>        (_ @ sasamps(0.0741)) * 0.142,</span></span>
+<span data-line><span>        (_ @ sasamps(0.0753)) * 0.167,</span></span>
+<span data-line><span>        (_ @ sasamps(0.0797)) * 0.134 :> _;</span></span>
+<span data-line> </span>
+<span data-line><span>    combSection = _ &lt;: </span></span>
+<span data-line><span>        lbcf(sasamps(0.040), 0.95, 0.5),</span></span>
+<span data-line><span>        lbcf(sasamps(0.041), 0.95, 0.5),</span></span>
+<span data-line><span>        lbcf(sasamps(0.043), 0.95, 0.5),</span></span>
+<span data-line><span>        lbcf(sasamps(0.055), 0.95, 0.5),</span></span>
+<span data-line><span>        lbcf(sasamps(0.059), 0.95, 0.5),</span></span>
+<span data-line><span>        lbcf(sasamps(0.061), 0.95, 0.5) :> _ :</span></span>
+<span data-line><span>        apf(sasamps(0.007), -0.09683) @ sasamps(0.0017);</span></span>
+<span data-line><span>};</span></span>
+<span data-line><span>process = moorerReverb;</span></span></code></pre></figure>
+<h3 id="freeverb">Freeverb<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#freeverb" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>A more recently developed Schroeder/Moorer Reverberation Simulation
+is <code>Freeverb</code> — a public domain C++ program by
+<code>Jezar at Dreampoint</code> used extensively in the
+free-software world.
+It uses four Schroeder allpasses in series and
+eight parallel Schroeder-Moorer filtered-feedback
+comb-filters for each audio channel,
+and is said to be especially well tuned.</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="faust" data-theme="github-light github-dark"><code data-language="faust" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>freeverb = _ * 0.1 : combSection : allpassSection</span></span>
+<span data-line><span>with {</span></span>
+<span data-line><span>    combSection = _ &lt;: </span></span>
+<span data-line><span>    // 1557 samples at 44100 = ms 35.3061218</span></span>
+<span data-line><span>    lbcf(msasamps(35.3061218), 0.84, 0.2),</span></span>
+<span data-line><span>    // 1617 samples at 44100 = ms 36.6666679</span></span>
+<span data-line><span>    lbcf(msasamps(36.6666679), 0.84, 0.2),</span></span>
+<span data-line><span>    // 1491 samples at 44100 = ms 33.8095245</span></span>
+<span data-line><span>    lbcf(msasamps(33.8095245), 0.84, 0.2),</span></span>
+<span data-line><span>    // 1422 samples at 44100 = ms 32.2448997</span></span>
+<span data-line><span>    lbcf(msasamps(32.2448997), 0.84, 0.2),</span></span>
+<span data-line><span>    // 1277 samples at 44100 = ms 28.9569168</span></span>
+<span data-line><span>    lbcf(msasamps(28.9569168), 0.84, 0.2),</span></span>
+<span data-line><span>    // 1356 samples at 44100 = ms 30.7482986</span></span>
+<span data-line><span>    lbcf(msasamps(30.7482986), 0.84, 0.2),</span></span>
+<span data-line><span>    // 1188 samples at 44100 = ms 26.9387760</span></span>
+<span data-line><span>    lbcf(msasamps(26.9387760), 0.84, 0.2),</span></span>
+<span data-line><span>    // 1116 samples at 44100 = ms 25.3061218</span></span>
+<span data-line><span>    lbcf(msasamps(25.3061218), 0.84, 0.2) :> _;</span></span>
+<span data-line> </span>
+<span data-line><span>    allpassSection = </span></span>
+<span data-line><span>    // 225 samples at 44100 = ms 5.1020408</span></span>
+<span data-line><span>    apf(msasamps(5.10204080), -0.5) :</span></span>
+<span data-line><span>    // 556 samples at 44100 = ms 12.6077099</span></span>
+<span data-line><span>    apf(msasamps(12.6077099), -0.5) :</span></span>
+<span data-line><span>    // 441 samples at 44100 = ms 10.0000000</span></span>
+<span data-line><span>    apf(msasamps(10.0000000), -0.5) :</span></span>
+<span data-line><span>    // 341 samples at 44100 = ms 7.7324262</span></span>
+<span data-line><span>    apf(msasamps(7.73242620), -0.5);</span></span>
+<span data-line><span>};</span></span>
+<span data-line><span>process = freeverb;</span></span></code></pre></figure>
+<h3 id="feedback-delay-network-fdn">Feedback Delay Network (FDN)<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#feedback-delay-network-fdn" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>The first ideas originate from Michael Gerzon’s
+Studio Sound reverb articles from 1971 and 1972.
+Later, in 1982, Stautner and Puckette introduced a
+multichannel reverberation algorithm in their paper
+“Designing Multichannel Reverberators.”
+The algorithm, called the Feedback Delay Network (FDN),
+aims to simulate the behavior of reflections
+within a room by using only a series of parallel
+comb filters with interconnected feedback paths.
+Below is a 4x4 example of the general design they proposed.</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="faust" data-theme="github-light github-dark"><code data-language="faust" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>fdnLossless = (inputPath : delaysPath : hadamardPath : normHadamard) ~ </span></span>
+<span data-line><span>si.bus(4) : delCompensation</span></span>
+<span data-line><span>with{</span></span>
+<span data-line><span>    t60(msDel, t60) = pow(0.001, msDel / t60);</span></span>
+<span data-line><span>    inputPath = ro.interleave(4, 2) : par(i, 4, (_, _) :> _);</span></span>
+<span data-line><span>    delay(ms) = _ @ (msasamps(ms) - 1);</span></span>
+<span data-line><span>    delaysPath = delay(68), delay(77), delay(90), delay(99);</span></span>
+<span data-line><span>    hadamardPath = hadamard(4);</span></span>
+<span data-line><span>    normHadamard = par(i, 4, _ * (1.0 / sqrt(4)));</span></span>
+<span data-line><span>    delCompensation = par(i, 4, mem);</span></span>
+<span data-line><span>};</span></span>
+<span data-line><span>//process = fdnLossless :> par(i, 2, _ / 2);</span></span>
+<span data-line> </span>
+<span data-line><span>fdn = (inputPath : opPath : delaysPath : hadamardPath : normHadamard : decay) ~ </span></span>
+<span data-line><span>si.bus(4) : delCompensation</span></span>
+<span data-line><span>with{</span></span>
+<span data-line><span>    t60(msDel, t60) = pow(0.001, msDel / t60);</span></span>
+<span data-line><span>    inputPath = ro.interleave(4, 2) : par(i, 4, (_, _) :> _);</span></span>
+<span data-line><span>    opPath = par(i, 4, op(0.4));</span></span>
+<span data-line><span>    delay(ms) = _ @ (msasamps(ms) - 1);</span></span>
+<span data-line><span>    delaysPath = delay(68), delay(77), delay(90), delay(99);</span></span>
+<span data-line><span>    hadamardPath = hadamard(4);</span></span>
+<span data-line><span>    normHadamard = par(i, 4, _ * (1.0 / sqrt(4)));</span></span>
+<span data-line><span>    decay = _ * t60_ms(68, 1), _ * t60_ms(77, 1), </span></span>
+<span data-line><span>            _ * t60_ms(90, 1), _ * t60_ms(99, 1);</span></span>
+<span data-line><span>    delCompensation = par(i, 4, mem);</span></span>
+<span data-line><span>};</span></span>
+<span data-line><span>process = fdn :> par(i, 2, _ / 2);</span></span></code></pre></figure>
+<h3 id="keith-barr-allpass-loop">Keith Barr Allpass Loop<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#keith-barr-allpass-loop" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Keith Barr was one of the co-founders of MXR,
+back in 1973. After MXR, he founded Alesis.
+Most recently, he designed the FV-1 chip for Spin Semiconductor.
+His Allpass Loop Reverb is a simplified yet effective model,
+utilizing a single allpass filter within a feedback loop.
+When multiple delays and all pass filters are placed into a loop,
+sound injected into the loop will recirculate,
+and the density of any impulse will increase as the signal
+passes successively through the allpass filters.
+The result, after a short period of time,
+will be a wash of sound, completely diffused
+as a natural reverb tail.
+The reverb can usually have a mono input
+(as from a single source),
+but benefits from a stereo output which gives
+the listener a more full, surrounding reverberant image.</p>
+<p>Here a Faust porting of: Reverb 1 program from the Spin Semiconductor FV-1 internal ROM</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="faust" data-theme="github-light github-dark"><code data-language="faust" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>kb_rom_rev1(rt, damp, L, R) = aploop</span></span>
+<span data-line><span>with{</span></span>
+<span data-line><span>// input allpass sections</span></span>
+<span data-line><span>apSec(0) = apf(adaptSR(32768, 156), 0.5) : apf(adaptSR(32768, 223), 0.5) : apf(adaptSR(32768, 332), 0.5) : apf(adaptSR(32768, 548), 0.5);</span></span>
+<span data-line><span>apSec(1) = apf(adaptSR(32768, 186), 0.5) : apf(adaptSR(32768, 253), 0.5) : apf(adaptSR(32768, 302), 0.5) : apf(adaptSR(32768, 498), 0.5);</span></span>
+<span data-line> </span>
+<span data-line><span>// allpass loop sections</span></span>
+<span data-line><span>loopSec(0) = _ @ (adaptSR(32768, 4568) - 1) : _ * rt : _ + (L : apSec(0)) : apfMod(os.osc(0.5), adaptSR(32768, 1251), adaptSR(32768, 20), 0.6) : apf(adaptSR(32768, 1751), 0.6) : op(damp) : op(- 0.05);</span></span>
+<span data-line><span>loopSec(1) = _ @ adaptSR(32768, 5859) : _ * rt : apf(adaptSR(32768, 1443), 0.6) : apf(adaptSR(32768, 1343), 0.6) : op(damp) : op(- 0.05);</span></span>
+<span data-line><span>loopSec(2) = _ @ adaptSR(32768, 4145) : _ * rt : _ + (R : apSec(1)) : apfMod(os.osc(0.5), adaptSR(32768, 1582), adaptSR(32768, 20), 0.6) : apf(adaptSR(32768, 1981), 0.6) : op(damp) : op(- 0.05);</span></span>
+<span data-line><span>loopSec(3) = _ @ adaptSR(32768, 3476) : _ * rt : apf(adaptSR(32768, 1274), 0.6) : apf(adaptSR(32768, 1382), 0.6) : op(damp) : op(- 0.05);</span></span>
+<span data-line> </span>
+<span data-line><span>// output delay taps</span></span>
+<span data-line><span>outTaps = ((_ * 1.5 @ adaptSR(32768, 2630), _ * 1.2 @ adaptSR(32768, 1943), _ * 1.0 @ adaptSR(32768, 3200), _ * 0.8 @ adaptSR(32768, 4016)) :> +),</span></span>
+<span data-line><span>((_ * 1.0 @ adaptSR(32768, 2420), _ * 0.8 @ adaptSR(32768, 2631), _ * 1.5 @ adaptSR(32768, 1163), _ * 1.2 @ adaptSR(32768, 3330)) :> +);</span></span>
+<span data-line> </span>
+<span data-line><span>// complete allpass loop</span></span>
+<span data-line><span>aploop = (_ : loopSec(0) &lt;: ((loopSec(1) &lt;: ((_ : loopSec(2) &lt;: loopSec(3), _), _)), _)) ~ _ : ro.cross(4) &lt;: outTaps; </span></span>
+<span data-line><span>};</span></span>
+<span data-line><span>process = kb_rom_rev1(0.95, 0.5); </span></span></code></pre></figure>
+<p>Here another Reverb Model based on the Keith Barr Allpass Loop Reverb.
+A Corey Kereliuk’s implementation of the Reverb.</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="faust" data-theme="github-light github-dark"><code data-language="faust" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>ck_kbVerb(apfG, krt) = si.bus(2) : mix(ma.PI/2) : * (0.5), * (0.5) : procLeft, procRight : si.bus(2)</span></span>
+<span data-line><span>with{	 </span></span>
+<span data-line><span>    // stereo input mix</span></span>
+<span data-line><span>    mix(theta) = si.bus(2) &lt;: (*(c), *(-s), *(s), *(c)) : (+, +) : si.bus(2)</span></span>
+<span data-line><span>	with {</span></span>
+<span data-line><span>		c = cos(theta);</span></span>
+<span data-line><span>		s = sin(theta);</span></span>
+<span data-line><span>	};</span></span>
+<span data-line> </span>
+<span data-line><span>    // import prime numbers</span></span>
+<span data-line><span>    primes = component(&quot;prime_numbers.dsp&quot;).primes;</span></span>
+<span data-line><span>    // calculation of left and right indexes</span></span>
+<span data-line><span>    ind_left(i)  = 100 + 10 * pow(2, i) : int;</span></span>
+<span data-line><span>    ind_right(i) = 100 + 11 * pow(2, i) : int;</span></span>
+<span data-line> </span>
+<span data-line><span>    // allpass single section</span></span>
+<span data-line><span>    section((n1, n2)) = apf(n1, - apfG) : apf(n2, - apfG) : _ @ int(0.75 * (n1 + n2));</span></span>
+<span data-line> </span>
+<span data-line><span>    // chain and ring functions</span></span>
+<span data-line><span>    allpass_chain(((n1, n2), ns), x) = _ : section((n1, n2)) &lt;: R(x, ns), _</span></span>
+<span data-line><span>    with {</span></span>
+<span data-line><span>    	R(x, ((n1, n2), ns)) = _,x : + : section((n1, n2)) &lt;: R(x, ns), _;</span></span>
+<span data-line><span>    	R(x, (n1, n2)) = _,x : + : section((n1, n2));</span></span>
+<span data-line><span>    };</span></span>
+<span data-line><span>    procMono(feedfwd_delays, feedback_delays, feedback_gain, x) = x : </span></span>
+<span data-line><span>    (+ : allpass_chain(feedfwd_delays, x)) ~ (_,x : + : section(feedback_delays) : </span></span>
+<span data-line><span>    *(feedback_gain)) :> _;</span></span>
+<span data-line><span>    // left reverb</span></span>
+<span data-line><span>	feedfwd_delays_left = par(i, 5, (ba.take((ind_left(i)), primes), ba.take((ind_left(i+1)), primes)));</span></span>
+<span data-line><span>	feedback_delays_left = (ba.take(100, primes), ba.take(101, primes));</span></span>
+<span data-line><span>	procLeft = procMono(feedfwd_delays_left, feedback_delays_left, krt);</span></span>
+<span data-line><span>	// right reverb</span></span>
+<span data-line><span>	feedfwd_delays_right = par(i, 4, (ba.take((ind_right(i)), primes), ba.take((ind_right(i+1)), primes)));</span></span>
+<span data-line><span>	feedback_delays_right = (ba.take(97, primes), ba.take(99, primes));</span></span>
+<span data-line><span>	procRight = procMono(feedfwd_delays_right, feedback_delays_right, krt);</span></span>
+<span data-line><span>};</span></span>
+<span data-line><span>process = ck_kbVerb(0.7, 0.5);</span></span></code></pre></figure>
+<h3 id="james-dattorro-and-the-lexicon-480l-topology-a-landmark-in-reverb-design">James Dattorro and the Lexicon 480L Topology: A Landmark in Reverb Design<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#james-dattorro-and-the-lexicon-480l-topology-a-landmark-in-reverb-design" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>In his groundbreaking paper published in the Journal of the Audio Engineering Society, Vol. 45, No. 9, September 1997, James Dattorro opened up the design secrets behind the allpass loop reverbs, offering detailed insights into a reverb architecture that would shape the future of digital reverb technology.
+Whereas earlier papers, such as Gardner’s, hinted at concepts that had been circulating privately within the music technology industry, Dattorro’s paper fully exposed the inner workings of allpass loop reverbs. He introduced a specific allpass loop reverb in great detail, including all the delay lengths and coefficients, which he described as being “in the style of [Lexicon’s] Griesinger.” This paper effectively served as a Rosetta Stone for reverb design, offering a clear and practical understanding of the mechanisms that drive reverb effects. Many modern reverb plugins and built-in synth reverbs have directly recreated the “Dattorro” reverb, underscoring the paper’s enduring influence in the field.
+One of the paper’s key contributions was Dattorro’s exploration of the single loop feedback system, which was central to the Lexicon 480L’s reverb design. This architecture, which Dattorro helped reveal, is simpler yet more effective in simulating natural reverbs, providing dense and realistic sound with minimal complexity. The Lexicon 480L’s feedback structure, initially shrouded in secrecy, was described in Dattorro’s work with full transparency, as the company had granted him permission to detail their proprietary system. This was a crucial moment in the advancement of reverb design, as it opened up new possibilities for digital reverberation.</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="faust" data-theme="github-light github-dark"><code data-language="faust" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>greisingerReverb(decay, damp) = (si.bus(2) :> _ * (1 / 2) : predelay : op(damp) : apfsec) &lt;: si.bus(2) : (ro.interleave(2, 2) : (par(i, 2, (_, _) :> + : loopsec(i)) : ro.crossNM(4, 1), si.bus(3))) ~ si.bus(2) : (si.block(2), si.bus(6)) : routing</span></span>
+<span data-line><span>with{</span></span>
+<span data-line><span>    predelay = _ @ msasamps(30);</span></span>
+<span data-line> </span>
+<span data-line><span>    apfsec = apf(msasamps(4.771), 0.75) : apf(msasamps(3.595), 0.75) :</span></span>
+<span data-line><span>        apf(msasamps(12.73), 0.625) : apf(msasamps(9.307), 0.625);</span></span>
+<span data-line> </span>
+<span data-line><span>    loopsec(0) = apfMod(os.osc(0.10), msasamps(30.51), msasamps(4), 0.7) : </span></span>
+<span data-line><span>        _ @ msasamps(141.69) : (_ &lt;: _, _) : (op(damp), _) : </span></span>
+<span data-line><span>        (apf(msasamps(89.24), 0.5) &lt;: _, _), _ : </span></span>
+<span data-line><span>        (_ @ (msasamps(106.28) - 1) &lt;: _, mem), _, _ :  </span></span>
+<span data-line><span>        (_ * decay, _, _, _) : (_, ro.cross(3));</span></span>
+<span data-line> </span>
+<span data-line><span>    loopsec(1) = apfMod(os.osc(0.07), msasamps(22.58), msasamps(4), 0.7) : </span></span>
+<span data-line><span>        _ @ msasamps(149.62) : (_ &lt;: _, _) : (op(damp), _) : </span></span>
+<span data-line><span>        (apf(msasamps(60.48), 0.5) &lt;: _, _), _ : </span></span>
+<span data-line><span>        (_ @ (msasamps(125.00) - 1) &lt;: _, mem), _, _ :  </span></span>
+<span data-line><span>        (_ * decay, _, _, _) : (_, ro.cross(3));</span></span>
+<span data-line> </span>
+<span data-line><span>    routing(dA0, ap0, dB0, dA1, ap1, dB1) = </span></span>
+<span data-line><span>        ((dA0 @ msasamps(8.90), dA0 @ msasamps(99.8), ap0 @ msasamps(64.2), dB0 @ msasamps(67),</span></span>
+<span data-line><span>          dA1 @ msasamps(66.8), ap1 @ msasamps(6.3), dB1 @ msasamps(35.8),  0) :> +),</span></span>
+<span data-line><span>        ((dA0 @ msasamps(70.8), ap0 @ msasamps(11.2), dB0 @ msasamps(4.1), dA1 @ msasamps(11.8), </span></span>
+<span data-line><span>          dA1 @ msasamps(121.7), ap1 @ msasamps(41.2), dB1 @ msasamps(89.7), 0) :> +);</span></span>
+<span data-line><span>};</span></span>
+<span data-line><span>process = greisingerReverb(0.8, 0.4); </span></span></code></pre></figure>
+<h2 id="references">References<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#references" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<ul>
+<li>Manfred Schroeder, “Natural Sounding Artificial Reverb,” 1962.</li>
+<li>Michael Gerzon, “Synthetic Stereo Reverberation,” 1971.</li>
+<li>James (Andy) Moorer, “About This Reverberation Business,” 1979</li>
+<li>Christopher Moore, “Time-Modulated Delay System and Improved Reverberation Using Same,” 1979.</li>
+<li>John Stautner and Miller Puckette, “Designing Multichannel Reverberators,” 1982.</li>
+<li>Jon Dattorro, “Effect Design - Part 1: Reverberator and Other Filters,” 1997.</li>
+<li>Jean-Marc Jot, “Efficient models for reverberation and distance rendering in computer music and virtual audio reality,” 1997.</li>
+<li>D. Rochesso, “Reverberation,” DAFX - Digital Audio Effects, Udo Zölzer, 2002.</li>
+</ul>
+<h2 id="topologies">Topologies<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#topologies" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<ul>
+<li>Manfred Schroeder propone l’applicazione di una rete di allpass e comb filters.</li>
+<li>James Moorer implementa un filtro lowpass all’interno della retroazione dei comb.</li>
+<li>Christopher Moore propone linee di ritardo modulate nel tempo e uscite Multi-tap da modelli delle early relfection.</li>
+<li>William Martens e Gary Kendall propongono delle early reflection spazializzate.</li>
+<li>Michael Gerzon, John Stautner &amp; Miller Puckette propongono le Feedback Delay Network (mixer a matrice per i feedback).</li>
+<li>David Griesinger propone un singolo Loop di Feedback utilizzando ritardi e filtri allpass.</li>
+</ul>
+<h1 id="main-references">Main References<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#main-references" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>Introduction to Digital Filters:
+With Audio Applications.
+books by Julius O. Smith III.
+Links to the series by Smith:</p>
+<ul>
+<li>Mathematics of the Discrete Fourier Transform (DFT)</li>
+<li>Introduction to Digital Filters</li>
+<li>Physical Audio Signal Processing</li>
+<li>Spectral Audio Signal Processing
+CCRMA by J.Smith <a href="https://ccrma.stanford.edu/~jos/fp/" class="external">https://ccrma.stanford.edu/~jos/fp/<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a> su DSP Related <a href="https://www.dsprelated.com/freebooks.php" class="external">Free DSP Books<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+</ul>
+<p>TOM ERBE - UC SAN DIEGO - REVERB TOPOLOGIES AND DESIGN <a href="http://tre.ucsd.edu/wordpress/wp-content/uploads/2018/10/reverbtopo.pdf" class="external">http://tre.ucsd.edu/wordpress/wp-content/uploads/2018/10/reverbtopo.pdf<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<p>ARTIFICIAL REVERBERATION: su DSPRELATED <a href="https://www.dsprelated.com/freebooks/pasp/Artificial_Reverberation.html" class="external">Artificial Reverberation | Physical Audio Signal Processing<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<p>Corey Kereliuk - Building a Reverb Plugin in Faust
+Keith Barr’s reverb architecture <a href="https://web.archive.org/web/20210111064016/http://blog.reverberate.ca/post/faust-reverb/" class="external">Building a Reverb Plugin in Faust<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<p>Spin Semiconductor DSP Basics <a href="http://www.spinsemi.com/knowledge_base/dsp_basics.html" class="external">Spin Semiconductor - DSP Basics<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a> Spin Semiconductor Audio Effects <a href="http://www.spinsemi.com/knowledge_base/effects.html#Reverberation" class="external">Spin Semiconductor - Effects<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<p>freeverb3vst - Reverb Algorithms Tips <a href="http://freeverb3vst.osdn.jp/tips/reverb.shtml" class="external">http://freeverb3vst.osdn.jp/tips/reverb.shtml<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<p>History of allpass loop / “ring” reverbs <a href="http://www.spinsemi.com/forum/viewtopic.php?p=555&amp;sid=5d31391b3883f1b9e013d5af80805019" class="external">History of allpass loop / “ring” reverbs? - Spin Semiconductor<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<p>Musical Applications of Microprocessors (The Hayden microcomputer series) <a href="http://sites.music.columbia.edu/cmc/courses/g6610/fall2016/week8/Musical_Applications_of_Microprocessors-Charmberlin.pdf" class="external">http://sites.music.columbia.edu/cmc/courses/g6610/fall2016/week8/Musical_Applications_of_Microprocessors-Charmberlin.pdf<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<p>Acustica_Riverbero - Alfredo Ardia <a href="http://appuntimusicaelettronica.blogspot.com/2012/10/acusticariverbero.html" class="external">Appunti: acustica_Riverbero<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<p>Algorithmic Reverbs: The Moorer Design <a href="https://christianfloisand.wordpress.com/2012/10/18/algorithmic-reverbs-the-moorer-design/" class="external">Algorithmic Reverbs: The Moorer Design | flyingSand<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<p>Dattorro Convex Optimization of a Reverberator <a href="https://www.convexoptimization.com/wikimization/index.php/Dattorro_Convex_Optimization_of_a_Reverberator" class="external">Dattorro Convex Optimization of a Reverberator - Wikimization<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<p>primes under 10.000 <a href="https://www.matematika.it/public/allegati/34/Numeri_primi_minori_di_10000_1_3.pdf" class="external">https://www.matematika.it/public/allegati/34/Numeri_primi_minori_di_10000_1_3.pdf<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p></article><hr/><div class="page-footer"><div class="graph"><h3>Graph View</h3><div class="graph-outer"><div id="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button id="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div id="global-graph-outer"><div id="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div></div></div><div class="right sidebar"><button class="darkmode" id="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="Dark mode"><title>Dark mode</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="Light mode"><title>Light mode</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button><div class="toc desktop-only"><button type="button" id="toc" class aria-controls="toc-content" aria-expanded="true"><h3>Table of Contents</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="toc-content" class><ul class="overflow"><li class="depth-1"><a href="#reverberation" data-for="reverberation">Reverberation</a></li><li class="depth-2"><a href="#duration-of-reverberation" data-for="duration-of-reverberation">Duration of Reverberation</a></li><li class="depth-2"><a href="#reverberation-in-music" data-for="reverberation-in-music">Reverberation in Music</a></li><li class="depth-2"><a href="#reflections" data-for="reflections">Reflections</a></li><li class="depth-2"><a href="#artificial-reverberation-models" data-for="artificial-reverberation-models">Artificial Reverberation Models</a></li><li class="depth-1"><a href="#digital-reverbs" data-for="digital-reverbs">Digital Reverbs</a></li><li class="depth-0"><a href="#digital-reverb-in-faust" data-for="digital-reverb-in-faust">Digital Reverb in FAUST</a></li><li class="depth-1"><a href="#delay-lines-in-faust" data-for="delay-lines-in-faust">Delay Lines in Faust</a></li><li class="depth-1"><a href="#some-methods-for-implementing-recursive-circuits-in-the-faust-language" data-for="some-methods-for-implementing-recursive-circuits-in-the-faust-language">Some Methods for Implementing Recursive Circuits in the Faust Language</a></li><li class="depth-1"><a href="#conversion-of-milliseconds-to-samples-and-vice-versa" data-for="conversion-of-milliseconds-to-samples-and-vice-versa">Conversion of Milliseconds to Samples and Vice Versa</a></li><li class="depth-2"><a href="#conversion-from-milliseconds-to-samples" data-for="conversion-from-milliseconds-to-samples">Conversion from Milliseconds to Samples</a></li><li class="depth-2"><a href="#conversion-from-samples-to-milliseconds" data-for="conversion-from-samples-to-milliseconds">Conversion from Samples to Milliseconds</a></li><li class="depth-1"><a href="#phase-alignment-of-feedback" data-for="phase-alignment-of-feedback">Phase Alignment of Feedback</a></li><li class="depth-1"><a href="#t60-decay-calculation" data-for="t60-decay-calculation">T60 Decay Calculation</a></li><li class="depth-0"><a href="#digital-filters" data-for="digital-filters">Digital Filters</a></li><li class="depth-2"><a href="#onezero-filter-1st-order-fir" data-for="onezero-filter-1st-order-fir">ONEZERO FILTER (1st Order FIR)</a></li><li class="depth-2"><a href="#onepole-filter-1st-order-iir" data-for="onepole-filter-1st-order-iir">ONEPOLE FILTER (1st Order IIR)</a></li><li class="depth-2"><a href="#onepole-topology-preserving-transforms-tpt" data-for="onepole-topology-preserving-transforms-tpt">ONEPOLE Topology Preserving Transforms (TPT)</a></li><li class="depth-2"><a href="#feedforward-comb-filter-nth-order-fir" data-for="feedforward-comb-filter-nth-order-fir">FEEDFORWARD COMB FILTER (Nth Order FIR)</a></li><li class="depth-2"><a href="#feedback-comb-filter-nth-order-iir" data-for="feedback-comb-filter-nth-order-iir">FEEDBACK COMB FILTER (Nth Order IIR)</a></li><li class="depth-2"><a href="#lowpass-feedback-comb-filter-nth-order-iir" data-for="lowpass-feedback-comb-filter-nth-order-iir">Lowpass FEEDBACK COMB FILTER (Nth Order IIR)</a></li><li class="depth-2"><a href="#allpass-filter" data-for="allpass-filter">ALLPASS FILTER</a></li><li class="depth-2"><a href="#modulated-allpass-filter" data-for="modulated-allpass-filter">Modulated ALLPASS FILTER</a></li><li class="depth-0"><a href="#topologies-and-design-of-digital-reverbs" data-for="topologies-and-design-of-digital-reverbs">Topologies and Design of Digital Reverbs</a></li><li class="depth-2"><a href="#chamberlin-reverb" data-for="chamberlin-reverb">Chamberlin Reverb</a></li><li class="depth-2"><a href="#chamberlin-reverb-with-decay-t60" data-for="chamberlin-reverb-with-decay-t60">Chamberlin Reverb with Decay T60</a></li><li class="depth-2"><a href="#schroeder-chowning-satrev-reverberator" data-for="schroeder-chowning-satrev-reverberator">Schroeder-Chowning SATREV Reverberator</a></li><li class="depth-2"><a href="#schroeder-samson-box-reverberator" data-for="schroeder-samson-box-reverberator">Schroeder Samson Box Reverberator</a></li><li class="depth-2"><a href="#moorer-reverb" data-for="moorer-reverb">Moorer Reverb</a></li><li class="depth-2"><a href="#freeverb" data-for="freeverb">Freeverb</a></li><li class="depth-2"><a href="#feedback-delay-network-fdn" data-for="feedback-delay-network-fdn">Feedback Delay Network (FDN)</a></li><li class="depth-2"><a href="#keith-barr-allpass-loop" data-for="keith-barr-allpass-loop">Keith Barr Allpass Loop</a></li><li class="depth-2"><a href="#james-dattorro-and-the-lexicon-480l-topology-a-landmark-in-reverb-design" data-for="james-dattorro-and-the-lexicon-480l-topology-a-landmark-in-reverb-design">James Dattorro and the Lexicon 480L Topology: A Landmark in Reverb Design</a></li><li class="depth-1"><a href="#references" data-for="references">References</a></li><li class="depth-1"><a href="#topologies" data-for="topologies">Topologies</a></li><li class="depth-0"><a href="#main-references" data-for="main-references">Main References</a></li></ul></div></div><div class="backlinks"><h3>Backlinks</h3><ul class="overflow"><li><a href="../Blog" class="internal">Blog</a></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v4.4.0</a> © 2025</p><ul><li><a href="https://github.com/jackyzha0/quartz">GitHub</a></li><li><a href="https://discord.gg/cRFFHYye7t">Discord Community</a></li></ul></footer></div></div></body><script type="application/javascript">function c(){let t=this.parentElement;t.classList.toggle("is-collapsed");let l=t.classList.contains("is-collapsed")?this.scrollHeight:t.scrollHeight;t.style.maxHeight=l+"px";let o=t,e=t.parentElement;for(;e;){if(!e.classList.contains("callout"))return;let n=e.classList.contains("is-collapsed")?e.scrollHeight:e.scrollHeight+o.scrollHeight;e.style.maxHeight=n+"px",o=e,e=e.parentElement}}function i(){let t=document.getElementsByClassName("callout is-collapsible");for(let s of t){let l=s.firstElementChild;if(l){l.addEventListener("click",c),window.addCleanup(()=>l.removeEventListener("click",c));let e=s.classList.contains("is-collapsed")?l.scrollHeight:s.scrollHeight;s.style.maxHeight=e+"px"}}}document.addEventListener("nav",i);window.addEventListener("resize",i);
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript"></script><script type="application/javascript">
+        const socket = new WebSocket('ws://localhost:3001')
+        // reload(true) ensures resources like images and scripts are fetched again in firefox
+        socket.addEventListener('message', () => document.location.reload(true))
+      </script><script src="../postscript.js" type="module"></script></html>
