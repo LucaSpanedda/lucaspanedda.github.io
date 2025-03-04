@@ -6,6 +6,12 @@
       <description>Last 10 notes on Luca Spanedda</description>
       <generator>Quartz -- quartz.jzhao.xyz</generator>
       <item>
+    <title>SMERM</title>
+    <link>https://quartz.jzhao.xyz/SMERM/SMERM</link>
+    <guid>https://quartz.jzhao.xyz/SMERM/SMERM</guid>
+    <description>Scuola di Musica Elettronica di RoMa Materials and Notes written while I was studying Electronic Music at the Conservatory in Rome (2015 - 2023). The materials are in Italian.</description>
+    <pubDate>Tue, 04 Mar 2025 14:38:00 GMT</pubDate>
+  </item><item>
     <title>Website</title>
     <link>https://quartz.jzhao.xyz/</link>
     <guid>https://quartz.jzhao.xyz/</guid>
@@ -59,12 +65,6 @@
     <guid>https://quartz.jzhao.xyz/CV</guid>
     <description></description>
     <pubDate>Tue, 04 Mar 2025 09:18:12 GMT</pubDate>
-  </item><item>
-    <title>Biography</title>
-    <link>https://quartz.jzhao.xyz/Biography</link>
-    <guid>https://quartz.jzhao.xyz/Biography</guid>
-    <description>Luca Spanedda (1995) is an Electroacoustic Music composer and performer specializing in computer music. His work explores the dynamic intersections between humans, cybernetics, and acoustic spaces.</description>
-    <pubDate>Tue, 04 Mar 2025 09:17:12 GMT</pubDate>
   </item>
     </channel>
   </rss>
