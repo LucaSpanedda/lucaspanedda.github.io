@@ -6,6 +6,24 @@
       <description>Last 10 notes on Luca Spanedda</description>
       <generator>Quartz -- quartz.jzhao.xyz</generator>
       <item>
+    <title>In-Finite</title>
+    <link>https://quartz.jzhao.xyz/Compositions/In-Finite</link>
+    <guid>https://quartz.jzhao.xyz/Compositions/In-Finite</guid>
+    <description></description>
+    <pubDate>Tue, 04 Mar 2025 18:20:08 GMT</pubDate>
+  </item><item>
+    <title>Waste Kompost Radio</title>
+    <link>https://quartz.jzhao.xyz/Compositions/Waste-Kompost-Radio</link>
+    <guid>https://quartz.jzhao.xyz/Compositions/Waste-Kompost-Radio</guid>
+    <description>Luca Spanedda · WKR (Installation, excerpt) (Luca Spanedda &amp; Dario Sanfilippo) @ Infiniti Possibili [2024].</description>
+    <pubDate>Tue, 04 Mar 2025 18:19:16 GMT</pubDate>
+  </item><item>
+    <title>RITI - Room Is The Instrument</title>
+    <link>https://quartz.jzhao.xyz/Compositions/RITI---Room-Is-The-Instrument</link>
+    <guid>https://quartz.jzhao.xyz/Compositions/RITI---Room-Is-The-Instrument</guid>
+    <description>Luca Spanedda · RITI - Studio Excerpt 1 - 27-02-2025 Luca Spanedda · RITI - Studio Excerpt 2 - 27-02-2025 ![](youtu.be/IbulZ3PJ8qA) RITI: Room Is The Instrument is a piece based on ...</description>
+    <pubDate>Tue, 04 Mar 2025 18:10:03 GMT</pubDate>
+  </item><item>
     <title>Links</title>
     <link>https://quartz.jzhao.xyz/Links</link>
     <guid>https://quartz.jzhao.xyz/Links</guid>
@@ -25,9 +43,9 @@
     <pubDate>Tue, 04 Mar 2025 16:17:04 GMT</pubDate>
   </item><item>
     <title>Compositions</title>
-    <link>https://quartz.jzhao.xyz/Compositions</link>
-    <guid>https://quartz.jzhao.xyz/Compositions</guid>
-    <description> Luca Spanedda · WKR (Installation, excerpt) (Luca Spanedda &amp; Dario Sanfilippo) @ Infiniti Possibili [2024].</description>
+    <link>https://quartz.jzhao.xyz/Compositions/Compositions</link>
+    <guid>https://quartz.jzhao.xyz/Compositions/Compositions</guid>
+    <description>In-Finite RITI - Room Is The Instrument Waste Kompost Radio.</description>
     <pubDate>Tue, 04 Mar 2025 16:06:05 GMT</pubDate>
   </item><item>
     <title>SMERM</title>
@@ -47,24 +65,6 @@
     <guid>https://quartz.jzhao.xyz/Contact</guid>
     <description>Mail: lucaspanedda1995@gmail.com.</description>
     <pubDate>Tue, 04 Mar 2025 10:55:56 GMT</pubDate>
-  </item><item>
-    <title>Blog</title>
-    <link>https://quartz.jzhao.xyz/Blog</link>
-    <guid>https://quartz.jzhao.xyz/Blog</guid>
-    <description>Digital Reverberation - a tutorial in Faust Exploring Pseudo-Random and Stochastic Signals in Digital Sound Synthesis About this filters business - a tutorial on Digital Filters ...</description>
-    <pubDate>Tue, 04 Mar 2025 10:47:01 GMT</pubDate>
-  </item><item>
-    <title>Digital Reverberation - a tutorial in Faust</title>
-    <link>https://quartz.jzhao.xyz/Posts/Digital-Reverberation---a-tutorial-in-Faust</link>
-    <guid>https://quartz.jzhao.xyz/Posts/Digital-Reverberation---a-tutorial-in-Faust</guid>
-    <description>Digital reverberation is a continually relevant and widely discussed topic in the realms of computer music and Digital Signal Processing, as well as electroacoustic music in general ...</description>
-    <pubDate>Tue, 04 Mar 2025 09:39:40 GMT</pubDate>
-  </item><item>
-    <title>Exploring Pseudo-Random and Stochastic Signals in Digital Sound Synthesis</title>
-    <link>https://quartz.jzhao.xyz/Posts/Exploring-Pseudo-Random-and-Stochastic-Signals-in-Digital-Sound-Synthesis</link>
-    <guid>https://quartz.jzhao.xyz/Posts/Exploring-Pseudo-Random-and-Stochastic-Signals-in-Digital-Sound-Synthesis</guid>
-    <description>Random and stochastic signals in synthesis can be useful for implementing time-varying oscillators and/or control signals. A common issue in digital synthesizers and audio effects is that the sounds often differ significantly from those produced in the physical world, due to the precise, time-invariant nature of signal generation in the digital domain.</description>
-    <pubDate>Tue, 04 Mar 2025 09:38:30 GMT</pubDate>
   </item>
     </channel>
   </rss>
