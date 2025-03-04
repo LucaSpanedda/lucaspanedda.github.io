@@ -6,16 +6,40 @@
       <description>Last 10 notes on Luca Spanedda</description>
       <generator>Quartz -- quartz.jzhao.xyz</generator>
       <item>
+    <title>Links</title>
+    <link>https://quartz.jzhao.xyz/Links</link>
+    <guid>https://quartz.jzhao.xyz/Links</guid>
+    <description>...</description>
+    <pubDate>Tue, 04 Mar 2025 16:25:58 GMT</pubDate>
+  </item><item>
+    <title>CV</title>
+    <link>https://quartz.jzhao.xyz/CV</link>
+    <guid>https://quartz.jzhao.xyz/CV</guid>
+    <description></description>
+    <pubDate>Tue, 04 Mar 2025 16:24:44 GMT</pubDate>
+  </item><item>
+    <title>PhD</title>
+    <link>https://quartz.jzhao.xyz/Studies/PhD/PhD</link>
+    <guid>https://quartz.jzhao.xyz/Studies/PhD/PhD</guid>
+    <description></description>
+    <pubDate>Tue, 04 Mar 2025 16:17:04 GMT</pubDate>
+  </item><item>
+    <title>Compositions</title>
+    <link>https://quartz.jzhao.xyz/Compositions</link>
+    <guid>https://quartz.jzhao.xyz/Compositions</guid>
+    <description> Luca Spanedda · WKR (Installation, excerpt) (Luca Spanedda &amp; Dario Sanfilippo) @ Infiniti Possibili [2024].</description>
+    <pubDate>Tue, 04 Mar 2025 16:06:05 GMT</pubDate>
+  </item><item>
     <title>SMERM</title>
-    <link>https://quartz.jzhao.xyz/SMERM/SMERM</link>
-    <guid>https://quartz.jzhao.xyz/SMERM/SMERM</guid>
+    <link>https://quartz.jzhao.xyz/Studies/SMERM/SMERM</link>
+    <guid>https://quartz.jzhao.xyz/Studies/SMERM/SMERM</guid>
     <description>Scuola di Musica Elettronica di RoMa Materials and Notes written while I was studying Electronic Music at the Conservatory in Rome (2015 - 2023). The materials are in Italian.</description>
     <pubDate>Tue, 04 Mar 2025 14:38:00 GMT</pubDate>
   </item><item>
     <title>Website</title>
     <link>https://quartz.jzhao.xyz/</link>
     <guid>https://quartz.jzhao.xyz/</guid>
-    <description>Blog Biography CV Links Listen Contact.</description>
+    <description>Welcome I’m Luca Spanedda. My musical practice explores the relationship between humans, cybernetic technologies, and acoustic spaces. Visit my Blog for posts about Computer Music and related reflections.</description>
     <pubDate>Tue, 04 Mar 2025 12:08:30 GMT</pubDate>
   </item><item>
     <title>Contact</title>
@@ -41,30 +65,6 @@
     <guid>https://quartz.jzhao.xyz/Posts/Exploring-Pseudo-Random-and-Stochastic-Signals-in-Digital-Sound-Synthesis</guid>
     <description>Random and stochastic signals in synthesis can be useful for implementing time-varying oscillators and/or control signals. A common issue in digital synthesizers and audio effects is that the sounds often differ significantly from those produced in the physical world, due to the precise, time-invariant nature of signal generation in the digital domain.</description>
     <pubDate>Tue, 04 Mar 2025 09:38:30 GMT</pubDate>
-  </item><item>
-    <title>About this filters business - a tutorial on Digital Filters in Faust</title>
-    <link>https://quartz.jzhao.xyz/Posts/About-this-filters-business---a-tutorial-on-Digital-Filters-in-Faust</link>
-    <guid>https://quartz.jzhao.xyz/Posts/About-this-filters-business---a-tutorial-on-Digital-Filters-in-Faust</guid>
-    <description>Preludes to Filter Syntax in Faust Constructing a delay line In FAUST the _ represent a signal input. A function with one input that goes directly to the output is written as follows: import(&quot;stdfaust.lib&quot;); // signal input - output //process = _; where process is the main function in Faust (the compiler’s output function).</description>
-    <pubDate>Tue, 04 Mar 2025 09:36:25 GMT</pubDate>
-  </item><item>
-    <title>Links</title>
-    <link>https://quartz.jzhao.xyz/Links</link>
-    <guid>https://quartz.jzhao.xyz/Links</guid>
-    <description>Github Soundcloud Instagram Youtube.</description>
-    <pubDate>Tue, 04 Mar 2025 09:28:46 GMT</pubDate>
-  </item><item>
-    <title>Listen</title>
-    <link>https://quartz.jzhao.xyz/Listen</link>
-    <guid>https://quartz.jzhao.xyz/Listen</guid>
-    <description> Luca Spanedda · WKR (Installation, excerpt) (Luca Spanedda &amp; Dario Sanfilippo) @ Infiniti Possibili [2024].</description>
-    <pubDate>Tue, 04 Mar 2025 09:27:55 GMT</pubDate>
-  </item><item>
-    <title>CV</title>
-    <link>https://quartz.jzhao.xyz/CV</link>
-    <guid>https://quartz.jzhao.xyz/CV</guid>
-    <description></description>
-    <pubDate>Tue, 04 Mar 2025 09:18:12 GMT</pubDate>
   </item>
     </channel>
   </rss>
