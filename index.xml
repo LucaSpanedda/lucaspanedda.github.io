@@ -10,61 +10,61 @@
     <link>https://quartz.jzhao.xyz/</link>
     <guid>https://quartz.jzhao.xyz/</guid>
     <description>Blog Biography CV Links Listen Contact.</description>
-    <pubDate>Tue, 04 Mar 2025 10:14:14 GMT</pubDate>
-  </item><item>
-    <title>Blog</title>
-    <link>https://quartz.jzhao.xyz/Blog</link>
-    <guid>https://quartz.jzhao.xyz/Blog</guid>
-    <description>Digital Reverberation - a tutorial in Faust Exploring Pseudo-Random and Stochastic Signals in Digital Sound Synthesis About this filters business - a tutorial on Digital Filters ...</description>
-    <pubDate>Tue, 04 Mar 2025 09:39:59 GMT</pubDate>
-  </item><item>
-    <title>Digital Reverberation - a tutorial in Faust</title>
-    <link>https://quartz.jzhao.xyz/Posts/Digital-Reverberation---a-tutorial-in-Faust</link>
-    <guid>https://quartz.jzhao.xyz/Posts/Digital-Reverberation---a-tutorial-in-Faust</guid>
-    <description>Digital reverberation is a continually relevant and widely discussed topic in the realms of computer music and Digital Signal Processing, as well as electroacoustic music in general ...</description>
-    <pubDate>Tue, 04 Mar 2025 09:39:04 GMT</pubDate>
-  </item><item>
-    <title>Exploring Pseudo-Random and Stochastic Signals in Digital Sound Synthesis</title>
-    <link>https://quartz.jzhao.xyz/Posts/Exploring-Pseudo-Random-and-Stochastic-Signals-in-Digital-Sound-Synthesis</link>
-    <guid>https://quartz.jzhao.xyz/Posts/Exploring-Pseudo-Random-and-Stochastic-Signals-in-Digital-Sound-Synthesis</guid>
-    <description>Random and stochastic signals in synthesis can be useful for implementing time-varying oscillators and/or control signals. A common issue in digital synthesizers and audio effects is that the sounds often differ significantly from those produced in the physical world, due to the precise, time-invariant nature of signal generation in the digital domain.</description>
-    <pubDate>Tue, 04 Mar 2025 09:38:09 GMT</pubDate>
-  </item><item>
-    <title>About this filters business - a tutorial on Digital Filters in Faust</title>
-    <link>https://quartz.jzhao.xyz/Posts/About-this-filters-business---a-tutorial-on-Digital-Filters-in-Faust</link>
-    <guid>https://quartz.jzhao.xyz/Posts/About-this-filters-business---a-tutorial-on-Digital-Filters-in-Faust</guid>
-    <description>Preludes to Filter Syntax in Faust Constructing a delay line In FAUST the _ represent a signal input. A function with one input that goes directly to the output is written as follows: import(&quot;stdfaust.lib&quot;); // signal input - output //process = _; where process is the main function in Faust (the compiler’s output function).</description>
-    <pubDate>Tue, 04 Mar 2025 09:33:49 GMT</pubDate>
+    <pubDate>Tue, 04 Mar 2025 12:08:30 GMT</pubDate>
   </item><item>
     <title>Contact</title>
     <link>https://quartz.jzhao.xyz/Contact</link>
     <guid>https://quartz.jzhao.xyz/Contact</guid>
     <description>Mail: lucaspanedda1995@gmail.com.</description>
-    <pubDate>Tue, 04 Mar 2025 09:29:18 GMT</pubDate>
+    <pubDate>Tue, 04 Mar 2025 10:55:56 GMT</pubDate>
   </item><item>
-    <title>Listen</title>
-    <link>https://quartz.jzhao.xyz/Listen</link>
-    <guid>https://quartz.jzhao.xyz/Listen</guid>
-    <description> Luca Spanedda · WKR (Installation, excerpt) (Luca Spanedda &amp; Dario Sanfilippo) @ Infiniti Possibili [2024].</description>
-    <pubDate>Tue, 04 Mar 2025 09:19:30 GMT</pubDate>
+    <title>Blog</title>
+    <link>https://quartz.jzhao.xyz/Blog</link>
+    <guid>https://quartz.jzhao.xyz/Blog</guid>
+    <description>Digital Reverberation - a tutorial in Faust Exploring Pseudo-Random and Stochastic Signals in Digital Sound Synthesis About this filters business - a tutorial on Digital Filters ...</description>
+    <pubDate>Tue, 04 Mar 2025 10:47:01 GMT</pubDate>
+  </item><item>
+    <title>Digital Reverberation - a tutorial in Faust</title>
+    <link>https://quartz.jzhao.xyz/Posts/Digital-Reverberation---a-tutorial-in-Faust</link>
+    <guid>https://quartz.jzhao.xyz/Posts/Digital-Reverberation---a-tutorial-in-Faust</guid>
+    <description>Digital reverberation is a continually relevant and widely discussed topic in the realms of computer music and Digital Signal Processing, as well as electroacoustic music in general ...</description>
+    <pubDate>Tue, 04 Mar 2025 09:39:40 GMT</pubDate>
+  </item><item>
+    <title>Exploring Pseudo-Random and Stochastic Signals in Digital Sound Synthesis</title>
+    <link>https://quartz.jzhao.xyz/Posts/Exploring-Pseudo-Random-and-Stochastic-Signals-in-Digital-Sound-Synthesis</link>
+    <guid>https://quartz.jzhao.xyz/Posts/Exploring-Pseudo-Random-and-Stochastic-Signals-in-Digital-Sound-Synthesis</guid>
+    <description>Random and stochastic signals in synthesis can be useful for implementing time-varying oscillators and/or control signals. A common issue in digital synthesizers and audio effects is that the sounds often differ significantly from those produced in the physical world, due to the precise, time-invariant nature of signal generation in the digital domain.</description>
+    <pubDate>Tue, 04 Mar 2025 09:38:30 GMT</pubDate>
+  </item><item>
+    <title>About this filters business - a tutorial on Digital Filters in Faust</title>
+    <link>https://quartz.jzhao.xyz/Posts/About-this-filters-business---a-tutorial-on-Digital-Filters-in-Faust</link>
+    <guid>https://quartz.jzhao.xyz/Posts/About-this-filters-business---a-tutorial-on-Digital-Filters-in-Faust</guid>
+    <description>Preludes to Filter Syntax in Faust Constructing a delay line In FAUST the _ represent a signal input. A function with one input that goes directly to the output is written as follows: import(&quot;stdfaust.lib&quot;); // signal input - output //process = _; where process is the main function in Faust (the compiler’s output function).</description>
+    <pubDate>Tue, 04 Mar 2025 09:36:25 GMT</pubDate>
   </item><item>
     <title>Links</title>
     <link>https://quartz.jzhao.xyz/Links</link>
     <guid>https://quartz.jzhao.xyz/Links</guid>
     <description>Social Links Github Soundcloud Instagram Youtube.</description>
-    <pubDate>Tue, 04 Mar 2025 09:19:20 GMT</pubDate>
+    <pubDate>Tue, 04 Mar 2025 09:28:46 GMT</pubDate>
+  </item><item>
+    <title>Listen</title>
+    <link>https://quartz.jzhao.xyz/Listen</link>
+    <guid>https://quartz.jzhao.xyz/Listen</guid>
+    <description> Luca Spanedda · WKR (Installation, excerpt) (Luca Spanedda &amp; Dario Sanfilippo) @ Infiniti Possibili [2024].</description>
+    <pubDate>Tue, 04 Mar 2025 09:27:55 GMT</pubDate>
   </item><item>
     <title>CV</title>
     <link>https://quartz.jzhao.xyz/CV</link>
     <guid>https://quartz.jzhao.xyz/CV</guid>
     <description></description>
-    <pubDate>Tue, 04 Mar 2025 09:17:31 GMT</pubDate>
+    <pubDate>Tue, 04 Mar 2025 09:18:12 GMT</pubDate>
   </item><item>
     <title>Biography</title>
     <link>https://quartz.jzhao.xyz/Biography</link>
     <guid>https://quartz.jzhao.xyz/Biography</guid>
     <description>Biography Luca Spanedda (1995) is an Electroacoustic Music composer and performer specializing in computer music. His work explores the dynamic intersections between humans, cybernetics, and acoustic spaces.</description>
-    <pubDate>Tue, 04 Mar 2025 09:16:07 GMT</pubDate>
+    <pubDate>Tue, 04 Mar 2025 09:17:12 GMT</pubDate>
   </item>
     </channel>
   </rss>
