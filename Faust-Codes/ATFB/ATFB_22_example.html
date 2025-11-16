@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<body>
+    <faust-editor>
+<!--
+import("stdfaust.lib");
+
+// allpass filter, (t, g) = give: delay in samples, feedback gain 0-1
+apf(t, g) = _ : (+ : _ <: @(t  - 1), *(g))~ *(-g) : mem, _ : + : _;
+process = (1000, 0.9, _) : apf;
+-->
+    </faust-editor>
+    <script src="faust-web-component.js"></script>
+</body>
+</html>
