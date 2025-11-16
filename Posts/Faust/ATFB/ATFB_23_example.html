@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<body>
+    <faust-editor>
+<!--
+import("stdfaust.lib");
+
+// Modulated Allpass filter
+modapf(delsamples, samplesmod, freqmod, apcoeff) = ( + : _ <:  
+    delayMod(delsamples, samplesmod, freqmod),
+    * (apcoeff))~ * (-apcoeff) : mem, _ : + : _
+    with{
+        delayMod(samples, samplesMod, freqMod, x) = delay
+        with{
+            unipolarMod(f, samples) = ((os.osc(f) + 1) / 2) * samples;
+            delay = x : de.fdelay(samples, samples - unipolarMod(freqMod, samplesMod));
+        };
+    };
+process = _ <: modapf(1100, 800, .12, .99), modapf(1000, 900, .12, .99);
+-->
+    </faust-editor>
+    <script src="faust-web-component.js"></script>
+</body>
+</html>

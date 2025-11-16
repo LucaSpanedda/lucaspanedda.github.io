@@ -27,7 +27,7 @@ And <code>import(&quot;stdfaust.lib&quot;);</code> is the function for import th
 <p>will produce a delayed signal of two samples.
 <strong>These last two programs produce the same result.</strong></p>
 <p><code>@</code> - indicates a number of variable delay samples, so for example a signal with 192000 samples of delay is written like:</p>
-<pre><code> // signal in delay (@192000 = 192000 samples of delay) 
+<pre><code>// signal in delay (@192000 = 192000 samples of delay) 
  //process = _ @ 192000; 
 </code></pre>
 <hr/>
@@ -38,12 +38,12 @@ but doing it at a delayed sample.</p>
 <p>Example:</p>
 <pre><code>// Dirac Impulse with delay lines - Impulse at Compile Time  
  dirac0 = 1 - 1';  
- //process = dirac0; 
+ //process = dirac0;
 </code></pre>
 <p>or something like that using functional syntax:</p>
 <pre><code>// Dirac Impulse with delay lines - Impulse at Compile Time  
  dirac1(x) = x - x';  
- //process = dirac1(1); 
+ //process = dirac1(1);
 </code></pre>
 <hr/>
 <h3 id="methods-for-implementing-recursive-circuits-in-the-faust-language">Methods for Implementing Recursive Circuits in the Faust Language<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#methods-for-implementing-recursive-circuits-in-the-faust-language" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
@@ -58,7 +58,7 @@ creating a feedback circuit.</li>
 in the code, is to put parentheses <code>()</code>, in this way <code>~</code>
 will point to the input before the parenthesis.
 In this program, the input is summed with itself delayed by one sample and multiplied by 0.5:</p>
-<pre><code>// dirac in feedback in sin 
+<pre><code>// dirac in feedback in sin
 //process = (1 - 1') * 1000 : (_ + _) ~ _ * (0.9999) : sin;
 </code></pre>
 <ul>
@@ -72,15 +72,15 @@ exit from the with, with <code>~ _</code>.
 You can find an exhaustive explanation of <a href="https://faustdoc.grame.fr/manual/syntax/index.html#with-expression" class="external">with construction here<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
 </ul>
 <p>Example:</p>
-<pre><code> // with environment example (dirac in feedback in sin) 
- //where out ~ _ returns to itself. 
- function_with(input1, input2) = out ~ _ : sin 
+<pre><code> // with environment example (dirac in feedback in sin)
+ //where out ~ _ returns to itself.
+ function_with(input1, input2) = out ~ _ : sin
      	with{   
-      		section1 = (1 - 1') * input1; 
-      		section2(argument1) = (argument1 * input2) + section1; 
-      		out = section2; 
-      	}; 
- //process = function_with(1000, 0.9999); 
+      		section1 = (1 - 1') * input1;
+      		section2(argument1) = (argument1 * input2) + section1;
+      		out = section2;
+      	};
+ //process = function_with(1000, 0.9999);
 </code></pre>
 <p>Moreover, with in Faust allows declaring variables
 that are not pointed to from outside the code but only
@@ -93,16 +93,16 @@ with this method we can write a signal
 recursively, similar to how
 recurrence equations are written.</p>
 <pre><code>// letrec function  
- function_letrec = sin(y) 
+ function_letrec = sin(y)
  // letrec definition  
  	letrec {  
   		'y = dirac * damp + amp * y;  
   	}  
   	// inside the letrec function  
      with {  
-         dirac = (1 - 1'); 
-         damp = 1000; 
-         amp = 0.9999; 
+         dirac = (1 - 1');
+         damp = 1000;
+         amp = 0.9999;
      };  
 //process = function_letrec &lt;: si.bus(2);
 </code></pre>
@@ -124,9 +124,9 @@ For now, let’s focus on small examples of converting between milliseconds and 
 <h3 id="conversion-from-milliseconds-to-samples">Conversion from Milliseconds to Samples<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#conversion-from-milliseconds-to-samples" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
 <p>This program takes input time expressed in milliseconds
 and returns the value in samples.</p>
-<pre><code>// milliseconds to samples conversion 
-milliseconds = 10; 
-msec2samps(msec) = msec * (ma.SR/1000); 
+<pre><code>// milliseconds to samples conversion
+milliseconds = 10;
+msec2samps(msec) = msec * (ma.SR/1000);
 //process = msec2samps(milliseconds);
 </code></pre>
 <p>Through <code>ma.SR</code>, we use the current sampling frequency of
@@ -176,8 +176,8 @@ and thus a greater definition.</p>
 <h2 id="phase-alignment-of-feedback">Phase Alignment of Feedback<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#phase-alignment-of-feedback" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
 <p>We need to spend a few words about the implementation of a delay line in feedback in the digital world.
 In the following program, we have a Dirac impulse that is summed by itselfs delayed by 2 samples.</p>
-<pre><code>// dirac delayed 
-//process = (_ + (1 - 1')) ~ _ @2; 
+<pre><code>// dirac delayed
+//process = (_ + (1 - 1')) ~ _ @2;
 </code></pre>
 <p>We expect these values to appear in the first 10 samples:</p>
 
@@ -286,14 +286,14 @@ That’s because in the digital domain, the feedback of a
 delay line, when applied, costs by default one sample delay.
 ‘<em>Feedback = 1 Sample</em>’</p>
 <p>So one must consider that the number of delay samples equals the number of samples minus 1:</p>
-<pre><code>// dirac delayed + phase alignment 
-delSampsDirac0 = 2; 
+<pre><code>// dirac delayed + phase alignment
+delSampsDirac0 = 2;
 //process = (_ + (1 - 1')) ~ _@(delSampsDirac0 - 1);
 </code></pre>
 <p>In some application scenarios later on, we’ll need a one-sample delay even at the input signal.
 In this case, simply concatenating a delay line in series will suffice.</p>
-<pre><code>// dirac delayed + phase alignment (final) 
-delSampsDirac1 = 2; 
+<pre><code>// dirac delayed + phase alignment (final)
+delSampsDirac1 = 2;
 //process = (_ + (1 - 1')) ~ _@(delSampsDirac1 - 1) : mem;
 </code></pre>
 <hr/>
@@ -309,46 +309,46 @@ there is a general amplitude control <code>* outgain</code>
 on the output function onezeroout</p>
 <pre><code>// onezero, g = give amplitude 0 to +/- 1 (open - close) to the delayed signal  
 oz(b1) = _ &lt;: (_ : mem * b1), _ :> +;  
-//process = oz; 
+//process = oz;
 </code></pre>
 <h3 id="onepole-filter-1st-order-iir">ONEPOLE FILTER (1st Order IIR)<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#onepole-filter-1st-order-iir" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
 <p><code>+ ~</code> is the summation, and the feedback of the arguments inside parentheses <code>()_</code> represents the input signal, (<code>_</code> denotes the signal) delayed by one sample <code>_</code> (automatically in the feedback) which enters : into the gain control of the <code>feedback * 1-feedback</code> the same feedback controls the input amplification of the signal not injected into the feedback there is a general amplitude control <code>* outgain</code> on the output function onezeroout</p>
 <pre><code>// onepole, g = give amplitude 0 to +/- 1 (open - close) to the delayed signal  
-op(b1) = _ * (1 - abs(b1)) : + ~ * (b1); 
-//process = op; 
+op(b1) = _ * (1 - abs(b1)) : + ~ * (b1);
+//process = op;
 </code></pre>
 <p>and OPF with Frequency Cut transfer functions:</p>
 <ul>
 <li>(1)</li>
 </ul>
-<pre><code>// onepole with frequency cut formula (chamberlin), fc = Hz 
-lp1p(fc) = _ * g : + ~ * (1 - g) 
-    with{ 
-        k(x) = x / (1.0 + x); 
-        g = tan(fc * ma.PI / SR) : k; 
-    }; 
-//process = lp1p; 
+<pre><code>// onepole with frequency cut formula (chamberlin), fc = Hz
+lp1p(fc) = _ * g : + ~ * (1 - g)
+    with{
+        k(x) = x / (1.0 + x);
+        g = tan(fc * ma.PI / SR) : k;
+    };
+//process = lp1p;
 </code></pre>
 <ul>
 <li>(2)</li>
 </ul>
-<pre><code>lp1p2(fc) = _ * (1 - b1) : + ~ * (b1) 
-      with { 
-           b1 = exp((fc * ma.PI / ma.SR) * -1); 
-      }; 
-//process = lp1p2; 
+<pre><code>lp1p2(fc) = _ * (1 - b1) : + ~ * (b1)
+      with {
+           b1 = exp((fc * ma.PI / ma.SR) * -1);
+      };
+//process = lp1p2;
 </code></pre>
 <p>same OPF with Formulae expressed in Seconds (1 / FC)</p>
 <ul>
 <li>(3)</li>
 </ul>
-<pre><code>// onepole in seconds or smooth function 
-opsec(sec) = _ * g : + ~ * (1 - g) 
-    with{ 
-        k(x) = x / (1.0 + x); 
-        g = tan((1 / sec) * ma.PI / ma.SR) : k; 
-    }; 
-//process = opsec; 
+<pre><code>// onepole in seconds or smooth function
+opsec(sec) = _ * g : + ~ * (1 - g)
+    with{
+        k(x) = x / (1.0 + x);
+        g = tan((1 / sec) * ma.PI / ma.SR) : k;
+    };
+//process = opsec;
 </code></pre>
 <hr/>
 <h3 id="feedforward-comb-filter-nth-order-fir">FEEDFORWARD COMB FILTER (Nth Order FIR)<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#feedforward-comb-filter-nth-order-fir" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
@@ -357,43 +357,43 @@ opsec(sec) = _ * g : + ~ * (1 - g)
 <p>there is a general amplitude control <code>* outgain</code> on the output function onezeroout</p>
 <pre><code>// feedforward comb filter, (t, g) = delay time in samples, filter gain 0-1  
 ffcf(t, g) = _ &lt;: ((_ @ (t)) * g), _ :> +;  
-//process = (1000, 0.9, _) : ffcf; 
+//process = (1000, 0.9, _) : ffcf;
 </code></pre>
 <h3 id="feedback-comb-filter-nth-order-iir">FEEDBACK COMB FILTER (Nth Order IIR)<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#feedback-comb-filter-nth-order-iir" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
 <p><code>+ ~</code> is the summation, and the feedback of the arguments inside parentheses <code>() _</code> represents the input signal, (<code>_</code> denotes the signal) delayed by <code>@(delaysamples)</code> samples (thus value to be passed externally) which enters : into the gain control of the feedback, <code>* feedback</code></p>
 <p>In the feedback, one sample of delay is already present by default, hence <code>delaysamples-1</code>.</p>
 <p>there is a general amplitude control <code>* outgain</code> on the output function combfeedbout</p>
-<pre><code>// feedback comb filter, (t, g) = give: delay time in samples, feedback gain 0-1 
-fbcf(t, g) = _ : (+  @(t - 1) ~ *(g)) : mem; 
-//process = (1000, 0.9, _) : fbcf; 
+<pre><code>// feedback comb filter, (t, g) = give: delay time in samples, feedback gain 0-1
+fbcf(t, g) = _ : (+  @(t - 1) ~ *(g)) : mem;
+//process = (1000, 0.9, _) : fbcf;
 </code></pre>
 <h3 id="lowpass-feedback-comb-filter-nth-order-iir">Lowpass FEEDBACK COMB FILTER (Nth Order IIR)<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#lowpass-feedback-comb-filter-nth-order-iir" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
 <p>similar to the comb filter, but within the feedback, following the feedback enters the signal : into the onepole. The onepole is a lowpass where the cutoff frequency can be controlled between 0. and 1. In the feedback, one sample of delay is already present by default, hence <code>delaysamples-1</code>.</p>
-<pre><code>// lowpass feedback comb filter, (t, g) = give: delay time in samples, g gain 0-1, Freq cut (HZ) 
-lbcf(t, g, fc) = _ : (+  @(t - 1) ~ (lp1p(fc) * (g))) : mem; 
-//process = (1000, 0.9, 10000, _) : lbcf; 
+<pre><code>// lowpass feedback comb filter, (t, g) = give: delay time in samples, g gain 0-1, Freq cut (HZ)
+lbcf(t, g, fc) = _ : (+  @(t - 1) ~ (lp1p(fc) * (g))) : mem;
+//process = (1000, 0.9, 10000, _) : lbcf;
 </code></pre>
 <hr/>
 <h3 id="allpass-filter">ALLPASS FILTER<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#allpass-filter" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
 <p>from the sum of a comb IIR and a comb FIR in opposition of phase, emerge a recursive delay unit that preserve the phase of the input signal. (<code>+</code> transitions : to a cable <code>_</code> and a split <code>&lt;:</code> then <code>@delay</code> and gain, in <code>feedback ~</code> to the initial sum. filtergain controls the amplitude of the two gain states, which in the filter are the same value but positive and negative, one side <code>* -filtergain</code> and one side <code>* +filtergain</code>. In the feedback, one sample of delay is already present by default, hence <code>delaysamples-1</code>. To maintain the delay threshold of the value delaysamples, a mem delay (of the subtracted sample) is added at the end.</p>
-<pre><code>// allpass filter, (t, g) = give: delay in samples, feedback gain 0-1 
-apf(t, g) = _ : (+ : _ &lt;: @(t  - 1), *(g))~ *(-g) : mem, _ : + : _; 
-//process = (1000, 0.9, _) : apf; 
+<pre><code>// allpass filter, (t, g) = give: delay in samples, feedback gain 0-1
+apf(t, g) = _ : (+ : _ &lt;: @(t  - 1), *(g))~ *(-g) : mem, _ : + : _;
+//process = (1000, 0.9, _) : apf;
 </code></pre>
 <h3 id="modulated-allpass-filter">MODULATED ALLPASS FILTER<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#modulated-allpass-filter" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
 <p>Allpass Filter with Time-Variant delay</p>
-<pre><code>// Modulated Allpass filter 
+<pre><code>// Modulated Allpass filter
 modapf(delsamples, samplesmod, freqmod, apcoeff) = ( + : _ &lt;:  
-    delayMod(delsamples, samplesmod, freqmod), 
-    * (apcoeff))~ * (-apcoeff) : mem, _ : + : _ 
-    with{ 
-        delayMod(samples, samplesMod, freqMod, x) = delay 
-        with{ 
-            unipolarMod(f, samples) = ((os.osc(f) + 1) / 2) * samples; 
-            delay = x : de.fdelay(samples, samples - unipolarMod(freqMod, samplesMod)); 
-        }; 
-    }; 
-//process = _ &lt;: modapf(1100, 800, .12, .99), modapf(1000, 900, .12, .99); 
+    delayMod(delsamples, samplesmod, freqmod),
+    * (apcoeff))~ * (-apcoeff) : mem, _ : + : _
+    with{
+        delayMod(samples, samplesMod, freqMod, x) = delay
+        with{
+            unipolarMod(f, samples) = ((os.osc(f) + 1) / 2) * samples;
+            delay = x : de.fdelay(samples, samples - unipolarMod(freqMod, samplesMod));
+        };
+    };
+//process = _ &lt;: modapf(1100, 800, .12, .99), modapf(1000, 900, .12, .99);
 </code></pre>
 <hr/>
 <h3 id="state-variable-filter-svf">STATE VARIABLE FILTER (SVF)<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#state-variable-filter-svf" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
@@ -410,105 +410,105 @@ like Notch, Peak, Allpass…</p>
 <p>This filter transfer functions were derived from analog prototypes (that
 are shown below for each EQ filter type) and had been digitized using the
 Bilinear Transform by Robert Bristow-Johnson: <a href="https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html" class="external">https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
-<pre><code>// Robert Bristow-Johnson's Biquad Filter - Direct Form 1 
-// https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html 
-biquad(i, cf, q) = _ : coefficients(i) : biquadFilter 
-     with{ 
-         biquadFilter(a0, a1, a2, b1, b2) = biquadFilter 
-             with{ 
+<pre><code>// Robert Bristow-Johnson's Biquad Filter - Direct Form 1
+// https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html
+biquad(i, cf, q) = _ : coefficients(i) : biquadFilter
+     with{
+         biquadFilter(a0, a1, a2, b1, b2) = biquadFilter
+             with{
                  biquadFilter =  _ &lt;: _, (mem  &lt;: (_, mem)) : (_ * a0, _ * a1, _ * a2) :> _ :  
-                                 ((_, _) :> _) ~ (_ &lt;: (_, mem) : (_ * -b1, _ * -b2) :> _); 
-             }; 
-  
-         // Angular Frequency formula 
-         omega(x) = (2 * ma.PI * x) / ma.SR; 
-         // Angular Frequency in the sine domain 
-         sn(x) = sin(omega(x)); 
-         // Angular Frequency in the cosine domain 
+                                 ((_, _) :> _) ~ (_ &lt;: (_, mem) : (_ * -b1, _ * -b2) :> _);
+             };
+
+         // Angular Frequency formula
+         omega(x) = (2 * ma.PI * x) / ma.SR;
+         // Angular Frequency in the sine domain
+         sn(x) = sin(omega(x));
+         // Angular Frequency in the cosine domain
          cs(x) = cos(omega(x));  
-         // Alpha 
-         alpha(cf0, q0) = sin(omega(cf0)) / (2 * q0); 
-  
-         // Robert Bristow-Johnson's Biquad Filter - Coefficents 
-         // Lowpass Filter 
-         coefficients(0) = a0, a1, a2, b1, b2, _ 
-         with{ 
-             b0 = (1 + alpha(cf, q)); 
-             a0 = ((1 - cs(cf)) / 2) / b0; 
-             a1 = (1 - cs(cf)) / b0; 
-             a2 = ((1 - cs(cf)) / 2) / b0; 
-             b1 = (-2 * cs(cf)) / b0; 
-             b2 = (1 - alpha(cf, q)) / b0; 
-         }; 
-         // Highpass filter 
-         coefficients(1) = a0, a1, a2, b1, b2, _ 
-         with{ 
-             b0 = (1 + alpha(cf, q)); 
-             a0 = ((1 + cs(cf)) / 2) / b0; 
-             a1 = (-1 * (1 + cs(cf))) / b0; 
-             a2 = ((1 + cs(cf)) / 2) / b0; 
-             b1 = (-2 * cs(cf)) / b0; 
-             b2 = (1 - alpha(cf, q)) / b0; 
-         }; 
-         // Bandpass Filter 
-         coefficients(2) = a0, a1, a2, b1, b2, _ 
-         with{ 
-             b0 = 1 + alpha(cf, q); 
-             a0 = alpha(cf, q) / b0; 
-             a1 = 0; 
-             a2 = - alpha(cf, q) / b0; 
-             b1 = (-2 * cs(cf)) / b0; 
-             b2 = (1 - alpha(cf, q)) / b0; 
-         }; 
-         // Notch filter 
-         coefficients(3) = a0, a1, a2, b1, b2, _ 
-         with{ 
-             b0 = 1 + alpha(cf, q); 
-             a0 = 1 / b0; 
-             a1 = (-2 * cs(cf)) / b0; 
-             a2 = 1 / b0; 
-             b1 = (-2 * cs(cf)) / b0; 
-             b2 = (1 - alpha(cf, q)) / b0; 
-         }; 
-         // Peaking EQ filter 
-         coefficients(4) = a0, a1, a2, b1, b2, _ 
-         with{ 
-             A = 10; 
-             b0 = 1 + (alpha(cf, q) / A); 
-             a0 = (1 + (alpha(cf, q) * A)) / b0; 
-             a1 = (-2 * cs(cf)) / b0; 
-             a2 = (1 - (alpha(cf, q) * A)) / b0; 
-             b1 = (-2 * cs(cf)) / b0; 
-             b2 = (1 - (alpha(cf, q) / A)) / b0; 
-         }; 
-         // Low Shelf Filter 
-         coefficients(5) = a0, a1, a2, b1, b2, _ 
-         with{ 
-             //dbGain 20; 
-             A  = pow(10, -20 /40); 
-             beta = sqrt(A + A); 
-             b0 = (A + 1) + (A - 1) * cs(cf) + beta * alpha(cf, q); 
-             a0 = (A * ((A + 1) - (A - 1) * cs(cf) + beta * alpha(cf, q))) /b0; 
-             a1 = (2 * A * ((A - 1) - (A + 1) * cs(cf))) / b0; 
-             a2 = (A * ((A + 1) - (A - 1) * cs(cf) - beta * alpha(cf, q))) /b0; 
-             b1 = (-2 * ((A - 1) + (A + 1) * cs(cf))) / b0; 
-             b2 = ((A + 1) + (A - 1) * cs(cf) - beta * alpha(cf, q)) / b0; 
-         }; 
-         // High Shelf Filter 
-         coefficients(6) = a0, a1, a2, b1, b2, _ 
-         with{ 
-             //dbGain 20; 
-             A  = pow(10, -20 /40); 
-             beta = sqrt(A + A); 
-             b0 = (A + 1) - (A - 1) * cs(cf) + beta * alpha(cf, q); 
-             a0 = (A * ((A + 1) + (A - 1) * cs(cf) + beta * alpha(cf, q))) /b0; 
-             a1 = (2 * A * ((A - 1) + (A + 1) * cs(cf))) / b0; 
-             a2 = (A * ((A + 1) + (A - 1) * cs(cf) - beta * alpha(cf, q))) /b0; 
-             b1 = (2 * ((A - 1) - (A + 1) * cs(cf))) / b0; 
-             b2 = ((A + 1) - (A - 1) * cs(cf) - beta * alpha(cf, q)) / b0; 
-         }; 
-}; 
-//process = (1000, 1, _) : biquad(0); 
+         // Alpha
+         alpha(cf0, q0) = sin(omega(cf0)) / (2 * q0);
+
+         // Robert Bristow-Johnson's Biquad Filter - Coefficents
+         // Lowpass Filter
+         coefficients(0) = a0, a1, a2, b1, b2, _
+         with{
+             b0 = (1 + alpha(cf, q));
+             a0 = ((1 - cs(cf)) / 2) / b0;
+             a1 = (1 - cs(cf)) / b0;
+             a2 = ((1 - cs(cf)) / 2) / b0;
+             b1 = (-2 * cs(cf)) / b0;
+             b2 = (1 - alpha(cf, q)) / b0;
+         };
+         // Highpass filter
+         coefficients(1) = a0, a1, a2, b1, b2, _
+         with{
+             b0 = (1 + alpha(cf, q));
+             a0 = ((1 + cs(cf)) / 2) / b0;
+             a1 = (-1 * (1 + cs(cf))) / b0;
+             a2 = ((1 + cs(cf)) / 2) / b0;
+             b1 = (-2 * cs(cf)) / b0;
+             b2 = (1 - alpha(cf, q)) / b0;
+         };
+         // Bandpass Filter
+         coefficients(2) = a0, a1, a2, b1, b2, _
+         with{
+             b0 = 1 + alpha(cf, q);
+             a0 = alpha(cf, q) / b0;
+             a1 = 0;
+             a2 = - alpha(cf, q) / b0;
+             b1 = (-2 * cs(cf)) / b0;
+             b2 = (1 - alpha(cf, q)) / b0;
+         };
+         // Notch filter
+         coefficients(3) = a0, a1, a2, b1, b2, _
+         with{
+             b0 = 1 + alpha(cf, q);
+             a0 = 1 / b0;
+             a1 = (-2 * cs(cf)) / b0;
+             a2 = 1 / b0;
+             b1 = (-2 * cs(cf)) / b0;
+             b2 = (1 - alpha(cf, q)) / b0;
+         };
+         // Peaking EQ filter
+         coefficients(4) = a0, a1, a2, b1, b2, _
+         with{
+             A = 10;
+             b0 = 1 + (alpha(cf, q) / A);
+             a0 = (1 + (alpha(cf, q) * A)) / b0;
+             a1 = (-2 * cs(cf)) / b0;
+             a2 = (1 - (alpha(cf, q) * A)) / b0;
+             b1 = (-2 * cs(cf)) / b0;
+             b2 = (1 - (alpha(cf, q) / A)) / b0;
+         };
+         // Low Shelf Filter
+         coefficients(5) = a0, a1, a2, b1, b2, _
+         with{
+             //dbGain 20;
+             A  = pow(10, -20 /40);
+             beta = sqrt(A + A);
+             b0 = (A + 1) + (A - 1) * cs(cf) + beta * alpha(cf, q);
+             a0 = (A * ((A + 1) - (A - 1) * cs(cf) + beta * alpha(cf, q))) /b0;
+             a1 = (2 * A * ((A - 1) - (A + 1) * cs(cf))) / b0;
+             a2 = (A * ((A + 1) - (A - 1) * cs(cf) - beta * alpha(cf, q))) /b0;
+             b1 = (-2 * ((A - 1) + (A + 1) * cs(cf))) / b0;
+             b2 = ((A + 1) + (A - 1) * cs(cf) - beta * alpha(cf, q)) / b0;
+         };
+         // High Shelf Filter
+         coefficients(6) = a0, a1, a2, b1, b2, _
+         with{
+             //dbGain 20;
+             A  = pow(10, -20 /40);
+             beta = sqrt(A + A);
+             b0 = (A + 1) - (A - 1) * cs(cf) + beta * alpha(cf, q);
+             a0 = (A * ((A + 1) + (A - 1) * cs(cf) + beta * alpha(cf, q))) /b0;
+             a1 = (2 * A * ((A - 1) + (A + 1) * cs(cf))) / b0;
+             a2 = (A * ((A + 1) + (A - 1) * cs(cf) - beta * alpha(cf, q))) /b0;
+             b1 = (2 * ((A - 1) - (A + 1) * cs(cf))) / b0;
+             b2 = ((A + 1) - (A - 1) * cs(cf) - beta * alpha(cf, q)) / b0;
+         };
+};
+//process = (1000, 1, _) : biquad(0);
 </code></pre>
 <hr/>
 <h3 id="onepole-topology-preserving-transforms-tpt">ONEPOLE Topology Preserving Transforms (TPT)<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#onepole-topology-preserving-transforms-tpt" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
@@ -518,59 +518,61 @@ the topology-preserving transform approach, can be considered as
 a generalization of bilinear transform, zero-delay feedback and trapezoidal integration methods. This results in digital filters having nice amplitude and phase
 responses, nice time-varying behavior and plenty of options for nonlinearities</p>
 <pre><code>// Vadim Zavalishin's Onepole TPT Filter (Topology Preserving Transform)  
-onePoleTPT(cf, x) = loop ~ _ : ! , si.bus(3) 
-     with { 
-         g = tan(cf * PI * ma.T); 
-         G = g / (1.0 + g); 
-         loop(s) = u , lp , hp , ap 
-             with { 
-             v = (x - s) * G; u = v + lp; lp = v + s; hp = x - lp; ap = lp - hp; 
-             }; 
-     }; 
-//process = onePoleTPT; 
-  
-// Lowpass and Highpass TPT 
-LPTPT(cf, x) = onePoleTPT(cf, x) : (_ , ! , !); 
-HPTPT(cf, x) = onePoleTPT(cf, x) : (! , _ , !); 
-  
-// Allpass TPT 
-APTPT(cf, x) = onePoleTPT(cf, x) : (!, !, _); 
-</code></pre>
-<h3 id="vadim-zavalishins-svf-topology-preserving-transform">Vadim Zavalishin’s SVF Topology Preserving Transform<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#vadim-zavalishins-svf-topology-preserving-transform" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
-<pre><code>// Vadim Zavalishin's SVF TPT filter (Topology Preserving Transform) 
-SVFTPT(Q, cf, x) = loop ~ si.bus(2) : (! , ! , _ , _ , _ , _ , _) 
-     with { 
-         g = tan(cf * ma.PI * ma.T); 
-         R = 1.0 / (2.0 * Q); 
-         G1 = 1.0 / (1.0 + 2.0 * R * g + g * g); 
-         G2 = 2.0 * R + g; 
-         loop(s1, s2) = u1 , u2 , lp , hp , bp * 2.0 * R , x - bp * 4.0 * R , bp 
-             with { 
-                 hp = (x - s1 * G2 - s2) * G1; 
-                 v1 = hp * g; 
-                 bp = s1 + v1; 
-                 v2 = bp * g; 
-                 lp = s2 + v2; 
-                 u1 = v1 + bp; 
-                 u2 = v2 + lp; 
-             }; 
-     }; 
-  
+onePoleTPT(cf, x) = loop ~ _ : ! , si.bus(3)
+     with {
+         g = tan(cf * PI * ma.T);
+         G = g / (1.0 + g);
+         loop(s) = u , lp , hp , ap
+             with {
+             v = (x - s) * G; u = v + lp; lp = v + s; hp = x - lp; ap = lp - hp;
+             };
+     };
+//process = onePoleTPT;
+
+// Lowpass and Highpass TPT
+LPTPT(cf, x) = onePoleTPT(cf, x) : (_ , ! , !);
+HPTPT(cf, x) = onePoleTPT(cf, x) : (! , _ , !);
+
+// Allpass TPT
+APTPT(cf, x) = onePoleTPT(cf, x) : (!, !, _);
+```0%&quot; height=&quot;100%&quot; style=&quot;border:none;&quot;>&lt;/iframe>
+
+### Vadim ```
+// Vadim Zavalishin's SVF TPT filter (Topology Preserving Transform)
+SVFTPT(Q, cf, x) = loop ~ si.bus(2) : (! , ! , _ , _ , _ , _ , _)
+     with {
+         g = tan(cf * ma.PI * ma.T);
+         R = 1.0 / (2.0 * Q);
+         G1 = 1.0 / (1.0 + 2.0 * R * g + g * g);
+         G2 = 2.0 * R + g;
+         loop(s1, s2) = u1 , u2 , lp , hp , bp * 2.0 * R , x - bp * 4.0 * R , bp
+             with {
+                 hp = (x - s1 * G2 - s2) * G1;
+                 v1 = hp * g;
+                 bp = s1 + v1;
+                 v2 = bp * g;
+                 lp = s2 + v2;
+                 u1 = v1 + bp;
+                 u2 = v2 + lp;
+             };
+     };
+
 // HP - LP SVF  
-LPSVFTPT(Q, cf, x) = SVFTPT(Q, cf, x) : (_ , ! , ! , ! , !); 
-HPSVFTPT(Q, cf, x) = SVFTPT(Q, cf, x) : (! , _ , ! , ! , !); 
-  
+LPSVFTPT(Q, cf, x) = SVFTPT(Q, cf, x) : (_ , ! , ! , ! , !);
+HPSVFTPT(Q, cf, x) = SVFTPT(Q, cf, x) : (! , _ , ! , ! , !);
+
 // Normalized Bandpass SVF  
-BPSVFTPT(Q, cf, x) = SVFTPT(Q, cf, x) : (! , ! , _ , ! , !); 
-  
-NotchSVFTPT(Q, cf, x) = x - BPSVF(Q, cf, x); 
-APSVFTPT(Q, cf, x) = SVFTPT(Q, cf, x) : (! , ! , ! , _ , !); 
-PeakingSVFTPT(Q, cf, x) = LPSVF(Q, cf, x) - HPSVF(Q, cf, x); 
-BP2SVFTPT(Q, cf, x) = SVFTPT(Q, cf, x) : (! , ! , ! , ! , _); 
-  
-// Bandpass Bandwidth SVF 
-BPBWSVFTPT(BW, CF, x) = BPSVF(clip(20000, EPS, (CF / BW)), CF, x); 
-</code></pre></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><button class="darkmode" id="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="Dark mode"><title>Dark mode</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="Light mode"><title>Light mode</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button><div class="toc desktop-only"><button type="button" id="toc" class aria-controls="toc-content" aria-expanded="true"><h3>Table of Contents</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="toc-content" class><ul class="overflow"><li class="depth-0"><a href="#preludes-to-filter-syntax-in-faust" data-for="preludes-to-filter-syntax-in-faust">Preludes to Filter Syntax in Faust</a></li><li class="depth-1"><a href="#constructing-a-delay-line" data-for="constructing-a-delay-line">Constructing a delay line</a></li><li class="depth-1"><a href="#dirac-impulse" data-for="dirac-impulse">Dirac impulse</a></li><li class="depth-1"><a href="#methods-for-implementing-recursive-circuits-in-the-faust-language" data-for="methods-for-implementing-recursive-circuits-in-the-faust-language">Methods for Implementing Recursive Circuits in the Faust Language</a></li><li class="depth-0"><a href="#milliseconds---samples-and-the-importance-of-the-sampling-frequency" data-for="milliseconds---samples-and-the-importance-of-the-sampling-frequency">Milliseconds - Samples and the importance of the sampling frequency</a></li><li class="depth-1"><a href="#conversion-from-milliseconds-to-samples" data-for="conversion-from-milliseconds-to-samples">Conversion from Milliseconds to Samples</a></li><li class="depth-1"><a href="#conversion-from-samples-to-milliseconds" data-for="conversion-from-samples-to-milliseconds">Conversion from Samples to Milliseconds</a></li><li class="depth-0"><a href="#phase-alignment-of-feedback" data-for="phase-alignment-of-feedback">Phase Alignment of Feedback</a></li><li class="depth-0"><a href="#digital-filters" data-for="digital-filters">Digital Filters</a></li><li class="depth-1"><a href="#onezero-filter-1st-order-fir" data-for="onezero-filter-1st-order-fir">ONEZERO FILTER (1st Order FIR)</a></li><li class="depth-1"><a href="#onepole-filter-1st-order-iir" data-for="onepole-filter-1st-order-iir">ONEPOLE FILTER (1st Order IIR)</a></li><li class="depth-1"><a href="#feedforward-comb-filter-nth-order-fir" data-for="feedforward-comb-filter-nth-order-fir">FEEDFORWARD COMB FILTER (Nth Order FIR)</a></li><li class="depth-1"><a href="#feedback-comb-filter-nth-order-iir" data-for="feedback-comb-filter-nth-order-iir">FEEDBACK COMB FILTER (Nth Order IIR)</a></li><li class="depth-1"><a href="#lowpass-feedback-comb-filter-nth-order-iir" data-for="lowpass-feedback-comb-filter-nth-order-iir">Lowpass FEEDBACK COMB FILTER (Nth Order IIR)</a></li><li class="depth-1"><a href="#allpass-filter" data-for="allpass-filter">ALLPASS FILTER</a></li><li class="depth-1"><a href="#modulated-allpass-filter" data-for="modulated-allpass-filter">MODULATED ALLPASS FILTER</a></li><li class="depth-1"><a href="#state-variable-filter-svf" data-for="state-variable-filter-svf">STATE VARIABLE FILTER (SVF)</a></li><li class="depth-1"><a href="#robert-bristow-johnsons-svf-biquad" data-for="robert-bristow-johnsons-svf-biquad">Robert Bristow Johnson’s SVF Biquad</a></li><li class="depth-1"><a href="#onepole-topology-preserving-transforms-tpt" data-for="onepole-topology-preserving-transforms-tpt">ONEPOLE Topology Preserving Transforms (TPT)</a></li><li class="depth-1"><a href="#vadim-zavalishins-svf-topology-preserving-transform" data-for="vadim-zavalishins-svf-topology-preserving-transform">Vadim Zavalishin’s SVF Topology Preserving Transform</a></li></ul></div></div><div class="backlinks"><h3>Backlinks</h3><ul class="overflow"><li><a href="../Blog" class="internal">Blog</a></li></ul></div></div><footer class><p><a href="https://lucaspanedda.github.io/Biography">Luca Spanedda</a> © 2025</p><ul><li><a href="https://github.com/LucaSpanedda">GitHub</a></li><li><a href="https://soundcloud.com/luca-spanedda-1995">Soundcloud</a></li><li><a href="https://www.youtube.com/channel/UCRCkVPYRcgo84G8W_uJZuaw">Youtube</a></li><li><a href="https://www.instagram.com/luca_spanedda/">Instagram</a></li><li><a href="https://conservatoriosantacecilia.academia.edu/LucaSpanedda">Academia</a></li></ul></footer></div></div></body><script type="application/javascript">function c(){let t=this.parentElement;t.classList.toggle("is-collapsed");let l=t.classList.contains("is-collapsed")?this.scrollHeight:t.scrollHeight;t.style.maxHeight=l+"px";let o=t,e=t.parentElement;for(;e;){if(!e.classList.contains("callout"))return;let n=e.classList.contains("is-collapsed")?e.scrollHeight:e.scrollHeight+o.scrollHeight;e.style.maxHeight=n+"px",o=e,e=e.parentElement}}function i(){let t=document.getElementsByClassName("callout is-collapsible");for(let s of t){let l=s.firstElementChild;if(l){l.addEventListener("click",c),window.addCleanup(()=>l.removeEventListener("click",c));let e=s.classList.contains("is-collapsed")?l.scrollHeight:s.scrollHeight;s.style.maxHeight=e+"px"}}}document.addEventListener("nav",i);window.addEventListener("resize",i);
+BPSVFTPT(Q, cf, x) = SVFTPT(Q, cf, x) : (! , ! , _ , ! , !);
+
+NotchSVFTPT(Q, cf, x) = x - BPSVF(Q, cf, x);
+APSVFTPT(Q, cf, x) = SVFTPT(Q, cf, x) : (! , ! , ! , _ , !);
+PeakingSVFTPT(Q, cf, x) = LPSVF(Q, cf, x) - HPSVF(Q, cf, x);
+BP2SVFTPT(Q, cf, x) = SVFTPT(Q, cf, x) : (! , ! , ! , ! , _);
+
+// Bandpass Bandwidth SVF
+BPBWSVFTPT(BW, CF, x) = BPSVF(clip(20000, EPS, (CF / BW)), CF, x);
+```Faust-Codes/ATFB/ATFB_26_example.html&quot; width=&quot;100%&quot; height=&quot;100%&quot; style=&quot;border:none;&quot;>&lt;/iframe>
+</code></pre></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><button class="darkmode" id="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="Dark mode"><title>Dark mode</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="Light mode"><title>Light mode</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button><div class="toc desktop-only"><button type="button" id="toc" class aria-controls="toc-content" aria-expanded="true"><h3>Table of Contents</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="toc-content" class><ul class="overflow"><li class="depth-0"><a href="#preludes-to-filter-syntax-in-faust" data-for="preludes-to-filter-syntax-in-faust">Preludes to Filter Syntax in Faust</a></li><li class="depth-1"><a href="#constructing-a-delay-line" data-for="constructing-a-delay-line">Constructing a delay line</a></li><li class="depth-1"><a href="#dirac-impulse" data-for="dirac-impulse">Dirac impulse</a></li><li class="depth-1"><a href="#methods-for-implementing-recursive-circuits-in-the-faust-language" data-for="methods-for-implementing-recursive-circuits-in-the-faust-language">Methods for Implementing Recursive Circuits in the Faust Language</a></li><li class="depth-0"><a href="#milliseconds---samples-and-the-importance-of-the-sampling-frequency" data-for="milliseconds---samples-and-the-importance-of-the-sampling-frequency">Milliseconds - Samples and the importance of the sampling frequency</a></li><li class="depth-1"><a href="#conversion-from-milliseconds-to-samples" data-for="conversion-from-milliseconds-to-samples">Conversion from Milliseconds to Samples</a></li><li class="depth-1"><a href="#conversion-from-samples-to-milliseconds" data-for="conversion-from-samples-to-milliseconds">Conversion from Samples to Milliseconds</a></li><li class="depth-0"><a href="#phase-alignment-of-feedback" data-for="phase-alignment-of-feedback">Phase Alignment of Feedback</a></li><li class="depth-0"><a href="#digital-filters" data-for="digital-filters">Digital Filters</a></li><li class="depth-1"><a href="#onezero-filter-1st-order-fir" data-for="onezero-filter-1st-order-fir">ONEZERO FILTER (1st Order FIR)</a></li><li class="depth-1"><a href="#onepole-filter-1st-order-iir" data-for="onepole-filter-1st-order-iir">ONEPOLE FILTER (1st Order IIR)</a></li><li class="depth-1"><a href="#feedforward-comb-filter-nth-order-fir" data-for="feedforward-comb-filter-nth-order-fir">FEEDFORWARD COMB FILTER (Nth Order FIR)</a></li><li class="depth-1"><a href="#feedback-comb-filter-nth-order-iir" data-for="feedback-comb-filter-nth-order-iir">FEEDBACK COMB FILTER (Nth Order IIR)</a></li><li class="depth-1"><a href="#lowpass-feedback-comb-filter-nth-order-iir" data-for="lowpass-feedback-comb-filter-nth-order-iir">Lowpass FEEDBACK COMB FILTER (Nth Order IIR)</a></li><li class="depth-1"><a href="#allpass-filter" data-for="allpass-filter">ALLPASS FILTER</a></li><li class="depth-1"><a href="#modulated-allpass-filter" data-for="modulated-allpass-filter">MODULATED ALLPASS FILTER</a></li><li class="depth-1"><a href="#state-variable-filter-svf" data-for="state-variable-filter-svf">STATE VARIABLE FILTER (SVF)</a></li><li class="depth-1"><a href="#robert-bristow-johnsons-svf-biquad" data-for="robert-bristow-johnsons-svf-biquad">Robert Bristow Johnson’s SVF Biquad</a></li><li class="depth-1"><a href="#onepole-topology-preserving-transforms-tpt" data-for="onepole-topology-preserving-transforms-tpt">ONEPOLE Topology Preserving Transforms (TPT)</a></li></ul></div></div><div class="backlinks"><h3>Backlinks</h3><ul class="overflow"><li><a href="../Blog" class="internal">Blog</a></li></ul></div></div><footer class><p><a href="https://lucaspanedda.github.io/Biography">Luca Spanedda</a> © 2025</p><ul><li><a href="https://github.com/LucaSpanedda">GitHub</a></li><li><a href="https://soundcloud.com/luca-spanedda-1995">Soundcloud</a></li><li><a href="https://www.youtube.com/channel/UCRCkVPYRcgo84G8W_uJZuaw">Youtube</a></li><li><a href="https://www.instagram.com/luca_spanedda/">Instagram</a></li><li><a href="https://conservatoriosantacecilia.academia.edu/LucaSpanedda">Academia</a></li></ul></footer></div></div></body><script type="application/javascript">function c(){let t=this.parentElement;t.classList.toggle("is-collapsed");let l=t.classList.contains("is-collapsed")?this.scrollHeight:t.scrollHeight;t.style.maxHeight=l+"px";let o=t,e=t.parentElement;for(;e;){if(!e.classList.contains("callout"))return;let n=e.classList.contains("is-collapsed")?e.scrollHeight:e.scrollHeight+o.scrollHeight;e.style.maxHeight=n+"px",o=e,e=e.parentElement}}function i(){let t=document.getElementsByClassName("callout is-collapsible");for(let s of t){let l=s.firstElementChild;if(l){l.addEventListener("click",c),window.addCleanup(()=>l.removeEventListener("click",c));let e=s.classList.contains("is-collapsed")?l.scrollHeight:s.scrollHeight;s.style.maxHeight=e+"px"}}}document.addEventListener("nav",i);window.addEventListener("resize",i);
 </script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript"></script><script type="application/javascript">
         const socket = new WebSocket('ws://localhost:3001')
         // reload(true) ensures resources like images and scripts are fetched again in firefox

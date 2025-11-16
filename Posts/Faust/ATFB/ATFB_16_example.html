@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<body>
+    <faust-editor>
+<!--
+import("stdfaust.lib");
+
+// onepole with frequency cut formula (chamberlin), fc = Hz
+lp1p(fc) = _ * g : + ~ * (1 - g)
+    with{
+        k(x) = x / (1.0 + x);
+        g = tan(fc * ma.PI / SR) : k;
+    };
+process = lp1p;
+-->
+    </faust-editor>
+    <script src="faust-web-component.js"></script>
+</body>
+</html>
