@@ -1,24 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <script type="module" src="faust-web-component.js"></script>
-
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-    }
-    #editor {
-      border: 1px solid black;
-      --faust-font-size: 12px;
-      --faust-line-height: 1.25;
-    }
-  </style>
-</head>
 <body>
-
-<faust-editor id="editor">
+    <faust-editor>
 <!--
 import("stdfaust.lib");
 
@@ -122,36 +105,7 @@ biquad(i, cf, q) = _ : coefficients(i) : biquadFilter
 };
 process = (1000, 1, _) : biquad(0);
 -->
-</faust-editor>
-
-<script>
-// Aspetta che il web component sia pronto
-customElements.whenDefined("faust-editor").then(() => {
-  const editor = document.getElementById("editor");
-
-  // 1) Cambia il tema in "light" totalmente neutro
-  editor.setAttribute("theme", "light");
-
-  // 2) Elimina la syntax colorata dentro CodeMirror
-  const shadow = editor.shadowRoot;
-  const style = document.createElement("style");
-
-  style.textContent = `
-    .cm-content, .cm-line, .cm-scroller {
-      color: black !important;
-      background: white !important;
-      font-size: 12px !important;
-      line-height: 1.25 !important;
-    }
-    .cm-content span {
-      color: black !important;
-      font-weight: normal !important;
-    }
-  `;
-
-  shadow.appendChild(style);
-});
-</script>
-
+    </faust-editor>
+    <script src="faust-web-component.js"></script>
 </body>
 </html>
