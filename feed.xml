@@ -1,0 +1,2302 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2026-03-29T17:15:51+02:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Luca Spanedda</title><subtitle>(1995) Electroacoustic music composer and performer specializing in computer music. His work explores the dynamic intersections between humans, cybernetic, and acoustic spaces.</subtitle><entry><title type="html">Sine oscillator approximations in FAUST</title><link href="http://localhost:4000/jekyll/update/2025/10/16/Sine-Osc-approximations-in-Faust.html" rel="alternate" type="text/html" title="Sine oscillator approximations in FAUST" /><published>2025-10-16T18:10:18+02:00</published><updated>2025-10-16T18:10:18+02:00</updated><id>http://localhost:4000/jekyll/update/2025/10/16/Sine-Osc-approximations-in-Faust</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2025/10/16/Sine-Osc-approximations-in-Faust.html"><![CDATA[<p>While FAUST provides optimized wavetable-based oscillators (<code class="language-plaintext highlighter-rouge">os.osc</code>), understanding explicit mathematical approximations of sinusoidal functions remains valuable for several reasons: educational insight into DSP fundamentals, scenarios requiring zero memory overhead, and contexts where algorithmic synthesis is preferred over lookup tables.</p>
+
+<p>Here we examines three distinct approximation strategies—Taylor series expansion, polynomial waveshaping, and rational approximation—with focus on their computational cost and practical implementation trade-offs.</p>
+
+<h2 id="the-fundamental-challenge">The Fundamental Challenge</h2>
+
+<p>A phasor generates a linear ramp from 0 to 1. Converting this to a sinusoid requires either:</p>
+
+<ol>
+  <li><strong>Wavetable lookup</strong> (~5-6 operations: multiplication, cast, memory reads, interpolation)</li>
+  <li><strong>Mathematical approximation</strong> (variable cost depending on method)</li>
+</ol>
+
+<p>Commercial synthesizers universally employ wavetables because memory (64KB for a high-quality table) is negligible compared to the performance gain. However, algorithmic approaches offer instructive alternatives.</p>
+
+<h2 id="triangle-wave-conversion">Triangle Wave Conversion</h2>
+
+<p>The first processing step is converting the phasor to a triangle wave that oscillates between -1 and +1. This normalization simplifies the subsequent sine approximation.</p>
+
+<pre><code class="language-faust">tri(x) = (x &lt; 0.5) * (4 * x - 1) + (x &gt;= 0.5) * (3 - 4 * x);
+</code></pre>
+
+<p><strong>profile:</strong></p>
+
+<ul>
+  <li>1 comparison (<code class="language-plaintext highlighter-rouge">x &lt; 0.5</code>)</li>
+  <li>1 comparison (<code class="language-plaintext highlighter-rouge">x &gt;= 0.5</code>)</li>
+  <li>4 multiplications</li>
+  <li>3 additions/subtractions</li>
+</ul>
+
+<p><strong>Total: ~6-8 operations</strong> (comparisons compile to conditional moves or masked operations in SIMD contexts)</p>
+
+<p>This triangle function is computationally lean and avoids expensive operations like <code class="language-plaintext highlighter-rouge">floor()</code> or modulo that higher-level abstractions (<code class="language-plaintext highlighter-rouge">ma.frac</code>) might introduce.</p>
+
+<h2 id="method-1-taylor-series-expansion">Method 1: Taylor Series Expansion</h2>
+
+<p>The Taylor series for sine around zero is:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sin(x) = x - x³/6 + x⁵/120 - x⁷/5040 + ...
+</code></pre></div></div>
+
+<p>Naive implementation would recompute powers repeatedly. The optimized version uses <strong>Horner’s method</strong> to minimize operations:</p>
+
+<pre><code class="language-faust">sintaylor(x) = x * (1 - x * x * (1.0/6 - x * x * (1.0/120 - x * x / 5040)));
+</code></pre>
+
+<p><strong>profile:</strong></p>
+
+<ul>
+  <li>1 multiplication to compute <code class="language-plaintext highlighter-rouge">x²</code></li>
+  <li>5 additional multiplications (reusing <code class="language-plaintext highlighter-rouge">x²</code>)</li>
+  <li>3 subtractions</li>
+  <li>Divisions by constants are precomputed by the compiler</li>
+</ul>
+
+<p><strong>Total: ~6 multiplications + 3 additions</strong></p>
+
+<p><strong>Precision:</strong> With 4 terms (up to x⁷), THD (Total Harmonic Distortion) is approximately 0.01%. Adding one more term (x⁹/362880) reduces this to ~0.0001%.</p>
+
+<p><strong>Scaling factor:</strong> The triangle output is multiplied by 0.90 instead of π/2 ≈ 1.5708 to keep the argument within the convergence range where the series is most accurate. This is a practical compromise that slightly reduces amplitude but significantly improves precision.</p>
+
+<h2 id="method-2-polynomial-waveshaping-minimax-approximation">Method 2: Polynomial Waveshaping (Minimax Approximation)</h2>
+
+<p>Unlike Taylor series (which converges around a single point), minimax polynomials are optimized to minimize the maximum error across an entire interval using Chebyshev or Remez exchange algorithms.</p>
+
+<pre><code class="language-faust">sinpoly(x) = x * (1.5708 - 0.645964 * x * x);
+</code></pre>
+
+<p><strong>Assembly profile:</strong></p>
+
+<ul>
+  <li>1 multiplication (<code class="language-plaintext highlighter-rouge">x²</code>)</li>
+  <li>2 multiplications</li>
+  <li>1 subtraction</li>
+</ul>
+
+<p><strong>Total: ~3 multiplications + 1 addition</strong></p>
+
+<p>This is <strong>half the computational cost</strong> of the Taylor series implementation while maintaining comparable accuracy for audio applications. The coefficients (1.5708, 0.645964) are empirically derived to minimize error in the [-π/2, π/2] range.</p>
+
+<p><strong>Trade-off:</strong> Fewer terms mean this approximation degrades faster outside the optimal range, but for normalized triangle input, the error remains below perceptual thresholds.</p>
+
+<h2 id="method-3-bhaskaras-rational-approximation">Method 3: Bhaskara’s Rational Approximation</h2>
+
+<p>Bhaskara I (7th century Indian mathematician) derived a rational approximation:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sin(x) ≈ 4x(π - x) / (π² - x(π - x))    for x ∈ [0, π]
+</code></pre></div></div>
+
+<p>Implementation requires careful input conditioning for positive and negative polarities:</p>
+
+<pre><code class="language-faust">sinbhaskara(x) = (4 * x * (PI - x)) / (PI * PI - x * (PI - x));
+
+sineoscbhaskara(x) = ((x - 0.5) * 2.0) &lt;: 
+    sinbhaskara(abs(_) * PI) * (((_ &lt; 0.0) * -1.0) + (_ &gt; 0.0)) * 0.7;
+</code></pre>
+
+<p><strong>profile:</strong></p>
+
+<ul>
+  <li>Input normalization: 2 multiplications, 1 subtraction</li>
+  <li>Absolute value: 1 comparison + conditional</li>
+  <li>Bhaskara formula: 6 multiplications, 3 additions, 1 division</li>
+  <li>Sign restoration: 2 comparisons, 2 multiplications</li>
+</ul>
+
+<p><strong>Total: ~9 multiplications + 1 division + 4 comparisons</strong></p>
+
+<p><strong>Characteristics:</strong></p>
+
+<ul>
+  <li>Division operation is expensive (~10-20 cycles on modern CPUs vs ~3-5 for multiplication)</li>
+  <li>Maximum error is ~0.0016 over [0, π] (historically remarkable for its simplicity)</li>
+  <li>The 0.7 scaling factor compensates for the approximation’s slight amplitude excess</li>
+</ul>
+
+<h2 id="practical-considerations">Practical Considerations</h2>
+
+<p><strong>When to use each method:</strong></p>
+
+<ul>
+  <li><strong>Polynomial waveshaping</strong>: Best balance for real-time DSP. Minimal CPU cost with acceptable precision.</li>
+  <li><strong>Taylor series</strong>: Preferred when precision is critical and extra terms can be added as needed.</li>
+  <li><strong>Bhaskara</strong>: Historical interest and educational value. The division operation makes it less suitable for high-polyphony contexts.</li>
+</ul>
+
+<p>The performance difference becomes critical in resource-constrained environments (embedded systems, mobile devices, or when CPU headroom is needed for filters, effects, and modulation).</p>
+
+<h2 id="code-implementation">Code Implementation</h2>
+
+<pre><code class="language-faust">import("stdfaust.lib");
+
+// High-precision π constant
+PI = 3.141592653589793238462643383279502884197169399375105820974944592307816;
+
+// Triangle wave converter (phasor [0,1] to triangle [-1,1])
+tri(x) = (x &lt; 0.5) * (4 * x - 1) + (x &gt;= 0.5) * (3 - 4 * x);
+
+// Method 1: Taylor series (Horner's method, 4 terms)
+sintaylor(x) = x * (1 - x * x * (1.0/6 - x * x * (1.0/120 - x * x / 5040)));
+// Or more
+sintaylor2(x) = x - (x * x * x) / 6 + (x * x * x * x * x) / 120 - 
+    (x * x * x * x * x * x * x) / 5040;
+sineosctaylor(x) = sintaylor(tri(x) * 0.5 * PI);
+// out
+process = os.phasor(1, si.smoo(hslider("F", 440, 20, 1000, 0.001))) : 
+    sineosctaylor * si.smoo(hslider("G", 0.8, 0, 1, 0.001));
+
+// Method 2: Minimax polynomial approximation  
+sinpoly(x) = x * (1.5708 - 0.645964 * x * x);
+sineoscpoly(x) = sinpoly(tri(x) * 0.90);
+// out
+/*
+process = os.phasor(1, si.smoo(hslider("F", 440, 20, 1000, 0.001))) : 
+    sineoscpoly * si.smoo(hslider("G", 0.8, 0, 1, 0.001));
+*/
+
+// Method 3: Bhaskara's rational approximation
+sinbhaskara(x) = (4 * x * (PI - x)) / (PI * PI - x * (PI - x));
+sineoscbhaskara(x) = ((x - 0.5) * 2.0) &lt;: 
+    sinbhaskara(abs(_) * PI) * (((_ &lt; 0.0) * -1.0) + (_ &gt; 0.0)) * 0.7;
+// out
+/*
+process = os.phasor(1, si.smoo(hslider("F", 440, 20, 1000, 0.001))) : 
+    sineoscbhaskara * si.smoo(hslider("G", 0.8, 0, 1, 0.001));
+*/
+</code></pre>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>While wavetable oscillators remain the industry standard for production environments, understanding these approximation methods provides insight into the computational mechanics of DSP. The polynomial waveshaping approach offers an excellent compromise between efficiency and precision, requiring only ~3× the operations of a wavetable while eliminating memory requirements entirely.</p>
+
+<p>For educational purposes, experimenting with these methods in FAUST reveals how mathematical abstractions translate to actual CPU cycles—a critical skill for optimizing real-time audio processing systems.</p>]]></content><author><name></name></author><category term="jekyll" /><category term="update" /><summary type="html"><![CDATA[While FAUST provides optimized wavetable-based oscillators (os.osc), understanding explicit mathematical approximations of sinusoidal functions remains valuable for several reasons: educational insight into DSP fundamentals, scenarios requiring zero memory overhead, and contexts where algorithmic synthesis is preferred over lookup tables.]]></summary></entry><entry><title type="html">About this filters business - a tutorial on Digital Filters in Faust</title><link href="http://localhost:4000/jekyll/update/2025/03/04/About-this-filters-business.html" rel="alternate" type="text/html" title="About this filters business - a tutorial on Digital Filters in Faust" /><published>2025-03-04T17:10:18+01:00</published><updated>2025-03-04T17:10:18+01:00</updated><id>http://localhost:4000/jekyll/update/2025/03/04/About-this-filters-business</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2025/03/04/About-this-filters-business.html"><![CDATA[<h2 id="preludes-to-filter-syntax-in-faust">Preludes to Filter Syntax in Faust</h2>
+
+<h3 id="constructing-a-delay-line">Constructing a delay line</h3>
+
+<p>In FAUST the <code class="language-plaintext highlighter-rouge">_</code> represent a signal input.
+A function with one input that goes directly to the output is written as follows:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>import("stdfaust.lib");
+
+// signal input - output
+//process = _;
+</code></pre></div></div>
+
+<p>where <code class="language-plaintext highlighter-rouge">process</code> is the <strong><em>main</em></strong> function in Faust (the compiler’s output function).
+And <code class="language-plaintext highlighter-rouge">import("stdfaust.lib");</code> is the function for import the Standard Faust Libraries.</p>
+
+<p>Faust provides us with three different syntaxes to express a delay line:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">'</code> - is used to express a one sample delay. Time expressions can be chained, so the output signal of this program</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// signal in delay (' = mem), (mem = Z^(-1))
+ //process = _'';
+</code></pre></div></div>
+
+<p>will produce a delayed signal of two samples.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">mem</code> - indicates a 1 sample delay. You can use the “mem” successively add delay samples, so the output signal of this program</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// signal in delay (' = mem), (mem = Z^(-1))
+//process = _ : mem : mem : _;
+</code></pre></div></div>
+
+<p>will produce a delayed signal of two samples.
+<strong>These last two programs produce the same result.</strong></p>
+
+<p><code class="language-plaintext highlighter-rouge">@</code> - indicates a number of variable delay samples, so for example a signal with 192000 samples of delay is written like:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> // signal in delay (@192000 = 192000 samples of delay)
+ //process = _ @ 192000;
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="dirac-impulse">Dirac impulse</h3>
+
+<p>Now, another element that we can introduce through the filter syntax is the Dirac impulse, which represents our minimum DSP unit, namely the single sample
+by putting a number 1 and subtracting the same value from it
+but doing it at a delayed sample.</p>
+
+<p>Example:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// Dirac Impulse with delay lines - Impulse at Compile Time  
+ dirac0 = 1 - 1';  
+ //process = dirac0;
+</code></pre></div></div>
+
+<p>or something like that using functional syntax:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// Dirac Impulse with delay lines - Impulse at Compile Time  
+ dirac1(x) = x - x';  
+ //process = dirac1(1);
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="methods-for-implementing-recursive-circuits-in-the-faust-language">Methods for Implementing Recursive Circuits in the Faust Language</h3>
+
+<p>Now we will illustrate three main methods for Implementing Recursive Circuits in FAUST Language:</p>
+
+<ul>
+  <li>Writing the code line with internal recursion:
+in this way <em>tilde</em> <code class="language-plaintext highlighter-rouge">~</code> operator sends the signal
+output to itself, to the first available input
+creating a feedback circuit.</li>
+</ul>
+
+<p>One way to force the operator to point to a certain point
+in the code, is to put parentheses <code class="language-plaintext highlighter-rouge">()</code>, in this way <code class="language-plaintext highlighter-rouge">~</code>
+will point to the input before the parenthesis.
+In this program, the input is summed with itself delayed by one sample and multiplied by 0.5:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  // dirac in feedback in sin
+  //process = (1 - 1') * 1000 : (_ + _) ~ _ * (0.9999) : sin;
+</code></pre></div></div>
+
+<ul>
+  <li>Using the with construction <code class="language-plaintext highlighter-rouge">with{};</code>:
+It can be used to create a local enviroment.
+You can define a function in which are passed
+the various arguments of the function that control
+the parameters of the code,
+and say that that function is equal to
+exit from the with, with <code class="language-plaintext highlighter-rouge">~ _</code>.
+You can find an exhaustive explanation of <a href="https://faustdoc.grame.fr/manual/syntax/index.html#with-expression">with construction here</a></li>
+</ul>
+
+<p>Example:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>   // with environment example (dirac in feedback in sin)
+   //where out ~ _ returns to itself.
+   function_with(input1, input2) = out ~ _ : sin
+       	with{   
+        		section1 = (1 - 1') * input1;
+        		section2(argument1) = (argument1 * input2) + section1;
+        		out = section2;
+        	};
+   //process = function_with(1000, 0.9999);
+</code></pre></div></div>
+
+<p>Moreover, with in Faust allows declaring variables
+ that are not pointed to from outside the code but only
+ from the belonging function; in this case</p>
+
+<p><strong>the function to which with belongs is “function_with”.</strong></p>
+
+<ul>
+  <li>
+    <p>A third method is to use the letrec environment.
+with this method we can write a signal
+recursively, similar to how
+recurrence equations are written.</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// letrec function  
+ function_letrec = sin(y)
+ // letrec definition  
+ 	letrec {  
+  		'y = dirac * damp + amp * y;  
+  	}  
+  	// inside the letrec function  
+     with {  
+         dirac = (1 - 1');
+         damp = 1000;
+         amp = 0.9999;
+     };  
+//process = function_letrec &lt;: si.bus(2);
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<hr />
+
+<p>Concluding this chapter on filter syntax in FAUST, we need to introduce a fundamental concept
+that will help us gain a more comprehensive understanding of digital filters:
+the relationship between milliseconds and samples -&gt; sampling frequency.</p>
+
+<h2 id="milliseconds---samples-and-the-importance-of-the-sampling-frequency">Milliseconds - Samples and the importance of the sampling frequency</h2>
+
+<p>Digital filters differ from analog filters for one particular reason: the Analog-to-Digital (AD)
+conversion system involves discretizing a continuous physical phenomenon into a sampled numerical one.
+Understanding the relationship between time and samples helps us in reasoning and practical
+applications of digital filters. These filters indeed entail spectral changes
+(when observed in the frequency domain) and involve temporal integration
+changes (when observed in the time domain).
+This brief preamble will be explained further in the chapter on the bilinear transform.
+For now, let’s focus on small examples of converting between milliseconds and samples.</p>
+
+<h3 id="conversion-from-milliseconds-to-samples">Conversion from Milliseconds to Samples</h3>
+
+<p>This program takes input time expressed in milliseconds
+and returns the value in samples.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// milliseconds to samples conversion
+milliseconds = 10;
+msec2samps(msec) = msec * (ma.SR/1000);
+//process = msec2samps(milliseconds);
+</code></pre></div></div>
+
+<p>Through <code class="language-plaintext highlighter-rouge">ma.SR</code>, we use the current sampling frequency of
+the machine we are using.
+For example, if we have a sampling frequency
+of <strong>96000</strong> samples per second,
+it means that 1000ms (1 second) is represented
+by <strong>96000 parts</strong>, and therefore <strong>a single unit
+of time</strong> like 1ms <strong>corresponds</strong> digitally to <strong>96 samples</strong>.
+For this reason, we divide the sampling frequency
+by 1000ms, resulting in a total number of samples
+that corresponds to 1ms in the digital world at
+a certain sampling frequency.
+And then we multiply the result of this operation
+by the total number of milliseconds we want to obtain as
+a representation in samples.
+If we multiply by 100 we will have
+<strong>9600 samples every 100ms</strong> at a sampling frequency
+of 96000 samples per second.</p>
+
+<h3 id="conversion-from-samples-to-milliseconds">Conversion from Samples to Milliseconds</h3>
+
+<p>Function for Conversion from Samples to Milliseconds:
+we input a total number of samples,
+of which we need to know the overall duration
+in milliseconds based on our sampling frequency.</p>
+
+<p>We know that a sampling frequency
+corresponds to a set of values that express
+together the duration of 1 second (1000 ms).</p>
+
+<p>It means, for example,
+that at a sampling frequency of 48,000
+samples per second,
+1000 milliseconds are represented by 48,000 parts.
+So if we divide our 1000ms. /
+into the 48,000 parts which are the samples of our system,
+we would get the duration in milliseconds of a single sample
+at that sampling frequency,
+in this case therefore:
+1000 / 48,000 = 0.02ms.
+And so the duration in milliseconds of a single sample at 48,000
+samples per second, is 0.02 milliseconds.
+If we multiply the obtained number *
+a total number of samples, we will get the time in milliseconds
+of those samples for that sampling frequency used.</p>
+
+<p>Obviously, as can be deduced from the considerations,
+as the sampling frequency increases,
+the temporal duration of a single sample decreases,
+and thus a greater definition.</p>
+
+<h2 id="phase-alignment-of-feedback">Phase Alignment of Feedback</h2>
+
+<p>We need to spend a few words about the implementation of a delay line in feedback in the digital world.
+In the following program, we have a Dirac impulse that is summed by itselfs delayed by 2 samples.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// dirac delayed
+//process = (_ + (1 - 1')) ~ _ @2;
+</code></pre></div></div>
+
+<p>We expect these values to appear in the first 10 samples:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>nth sample</th>
+      <th>value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td>0</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>However, the results of the data plot are as follows:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>nth sample</th>
+      <th>value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>There’s something wrong. With each feedback cycle, it’s being delayed by one extra sample!
+That’s because in the digital domain, the feedback of a
+delay line, when applied, costs by default one sample delay.
+‘<em>Feedback = 1 Sample</em>’</p>
+
+<p>So one must consider that the number of delay samples equals the number of samples minus 1:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// dirac delayed + phase alignment
+delSampsDirac0 = 2;
+//process = (_ + (1 - 1')) ~ _@(delSampsDirac0 - 1);
+</code></pre></div></div>
+
+<p>In some application scenarios later on, we’ll need a one-sample delay even at the input signal.
+In this case, simply concatenating a delay line in series will suffice.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// dirac delayed + phase alignment (final)
+delSampsDirac1 = 2;
+//process = (_ + (1 - 1')) ~ _@(delSampsDirac1 - 1) : mem;
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="digital-filters">Digital Filters</h2>
+
+<h3 id="onezero-filter-1st-order-fir">ONEZERO FILTER (1st Order FIR)</h3>
+
+<p><code class="language-plaintext highlighter-rouge">_</code> represents the input signal, (<code class="language-plaintext highlighter-rouge">_</code> denotes the signal)
+    it is then split into two parallel paths <code class="language-plaintext highlighter-rouge">&lt;:</code>
+    one delayed by one sample <code class="language-plaintext highlighter-rouge">_'</code> (<code class="language-plaintext highlighter-rouge">'</code> denotes one sample delay)
+    and one without delay, <code class="language-plaintext highlighter-rouge">_</code> (<code class="language-plaintext highlighter-rouge">,</code> denotes transition to the second path)
+    they are then summed into a single signal <code class="language-plaintext highlighter-rouge">:&gt; _ ;</code>
+    the delayed signal has a feedforward amplitude control <code class="language-plaintext highlighter-rouge">* feedforward</code>
+    there is a general amplitude control <code class="language-plaintext highlighter-rouge">* outgain</code>
+    on the output function onezeroout</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// onezero, g = give amplitude 0 to +/- 1 (open - close) to the delayed signal  
+oz(b1) = _ &lt;: (_ : mem * b1), _ :&gt; +;  
+//process = oz;
+</code></pre></div></div>
+
+<h3 id="onepole-filter-1st-order-iir">ONEPOLE FILTER (1st Order IIR)</h3>
+
+<p><code class="language-plaintext highlighter-rouge">+ ~</code> is the summation, and the feedback of the arguments inside parentheses <code class="language-plaintext highlighter-rouge">()_</code> represents the input signal, (<code class="language-plaintext highlighter-rouge">_</code> denotes the signal) delayed by one sample <code class="language-plaintext highlighter-rouge">_</code> (automatically in the feedback) which enters : into the gain control of the <code class="language-plaintext highlighter-rouge">feedback * 1-feedback</code> the same feedback controls the input amplification of the signal not injected into the feedback there is a general amplitude control <code class="language-plaintext highlighter-rouge">* outgain</code> on the output function onezeroout</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// onepole, g = give amplitude 0 to +/- 1 (open - close) to the delayed signal  
+op(b1) = _ * (1 - abs(b1)) : + ~ * (b1);
+//process = op;
+</code></pre></div></div>
+
+<p>and OPF with Frequency Cut transfer functions:</p>
+
+<ul>
+  <li>(1)</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// onepole with frequency cut formula (chamberlin), fc = Hz
+lp1p(fc) = _ * g : + ~ * (1 - g)
+    with{
+        k(x) = x / (1.0 + x);
+        g = tan(fc * ma.PI / SR) : k;
+    };
+//process = lp1p;
+</code></pre></div></div>
+
+<ul>
+  <li>(2)
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>lp1p2(fc) = _ * (1 - b1) : + ~ * (b1)
+    with {
+         b1 = exp((fc * ma.PI / ma.SR) * -1);
+    };
+//process = lp1p2;
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<p>same OPF with Formulae expressed in Seconds (1 / FC)</p>
+<ul>
+  <li>(3)</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// onepole in seconds or smooth function
+opsec(sec) = _ * g : + ~ * (1 - g)
+    with{
+        k(x) = x / (1.0 + x);
+        g = tan((1 / sec) * ma.PI / ma.SR) : k;
+    };
+//process = opsec;
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="feedforward-comb-filter-nth-order-fir">FEEDFORWARD COMB FILTER (Nth Order FIR)</h3>
+
+<p><code class="language-plaintext highlighter-rouge">_</code> represents the input signal, (<code class="language-plaintext highlighter-rouge">_</code> denotes the signal) it is then split into two parallel paths <code class="language-plaintext highlighter-rouge">&lt;:</code> one delayed by <code class="language-plaintext highlighter-rouge">@(delaysamples)</code> samples (thus value to be passed externally) and one without delay, <code class="language-plaintext highlighter-rouge">_</code> (<code class="language-plaintext highlighter-rouge">,</code> denotes transition to the second path) they are then summed into a single signal <code class="language-plaintext highlighter-rouge">:&gt; _ ;</code></p>
+
+<p>the delayed signal has a feedforward amplitude control <code class="language-plaintext highlighter-rouge">* feedforward</code></p>
+
+<p>there is a general amplitude control <code class="language-plaintext highlighter-rouge">* outgain</code> on the output function onezeroout</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// feedforward comb filter, (t, g) = delay time in samples, filter gain 0-1  
+ffcf(t, g) = _ &lt;: ((_ @ (t)) * g), _ :&gt; +;  
+//process = (1000, 0.9, _) : ffcf;
+</code></pre></div></div>
+
+<h3 id="feedback-comb-filter-nth-order-iir">FEEDBACK COMB FILTER (Nth Order IIR)</h3>
+
+<p><code class="language-plaintext highlighter-rouge">+ ~</code> is the summation, and the feedback of the arguments inside parentheses <code class="language-plaintext highlighter-rouge">() _</code> represents the input signal, (<code class="language-plaintext highlighter-rouge">_</code> denotes the signal) delayed by <code class="language-plaintext highlighter-rouge">@(delaysamples)</code> samples (thus value to be passed externally) which enters : into the gain control of the feedback, <code class="language-plaintext highlighter-rouge">* feedback</code></p>
+
+<p>In the feedback, one sample of delay is already present by default, hence <code class="language-plaintext highlighter-rouge">delaysamples-1</code>.</p>
+
+<p>there is a general amplitude control <code class="language-plaintext highlighter-rouge">* outgain</code> on the output function combfeedbout</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// feedback comb filter, (t, g) = give: delay time in samples, feedback gain 0-1
+fbcf(t, g) = _ : (+  @(t - 1) ~ *(g)) : mem;
+//process = (1000, 0.9, _) : fbcf;
+</code></pre></div></div>
+
+<h3 id="lowpass-feedback-comb-filter-nth-order-iir">Lowpass FEEDBACK COMB FILTER (Nth Order IIR)</h3>
+
+<p>similar to the comb filter, but within the feedback, following the feedback enters the signal : into the onepole. The onepole is a lowpass where the cutoff frequency can be controlled between 0. and 1. In the feedback, one sample of delay is already present by default, hence <code class="language-plaintext highlighter-rouge">delaysamples-1</code>.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// lowpass feedback comb filter, (t, g) = give: delay time in samples, g gain 0-1, Freq cut (HZ)
+lbcf(t, g, fc) = _ : (+  @(t - 1) ~ (lp1p(fc) * (g))) : mem;
+//process = (1000, 0.9, 10000, _) : lbcf;
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="allpass-filter">ALLPASS FILTER</h3>
+
+<p>from the sum of a comb IIR and a comb FIR in opposition of phase, emerge a recursive delay unit that preserve the phase of the input signal. (<code class="language-plaintext highlighter-rouge">+</code> transitions : to a cable <code class="language-plaintext highlighter-rouge">_</code> and a split <code class="language-plaintext highlighter-rouge">&lt;:</code> then <code class="language-plaintext highlighter-rouge">@delay</code> and gain, in <code class="language-plaintext highlighter-rouge">feedback ~</code> to the initial sum. filtergain controls the amplitude of the two gain states, which in the filter are the same value but positive and negative, one side <code class="language-plaintext highlighter-rouge">* -filtergain</code> and one side <code class="language-plaintext highlighter-rouge">* +filtergain</code>. In the feedback, one sample of delay is already present by default, hence <code class="language-plaintext highlighter-rouge">delaysamples-1</code>. To maintain the delay threshold of the value delaysamples, a mem delay (of the subtracted sample) is added at the end.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// allpass filter, (t, g) = give: delay in samples, feedback gain 0-1
+apf(t, g) = _ : (+ : _ &lt;: @(t  - 1), *(g))~ *(-g) : mem, _ : + : _;
+//process = (1000, 0.9, _) : apf;
+</code></pre></div></div>
+
+<h3 id="modulated-allpass-filter">MODULATED ALLPASS FILTER</h3>
+
+<p>Allpass Filter with Time-Variant delay</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// Modulated Allpass filter
+modapf(delsamples, samplesmod, freqmod, apcoeff) = ( + : _ &lt;:  
+    delayMod(delsamples, samplesmod, freqmod),
+    * (apcoeff))~ * (-apcoeff) : mem, _ : + : _
+    with{
+        delayMod(samples, samplesMod, freqMod, x) = delay
+        with{
+            unipolarMod(f, samples) = ((os.osc(f) + 1) / 2) * samples;
+            delay = x : de.fdelay(samples, samples - unipolarMod(freqMod, samplesMod));
+        };
+    };
+//process = _ &lt;: modapf(1100, 800, .12, .99), modapf(1000, 900, .12, .99);
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="state-variable-filter-svf">STATE VARIABLE FILTER (SVF)</h3>
+
+<p>State variable filters are second-order RC active filters consisting of two identical op-amp
+integrators with each one acting as a first-order, single-pole low pass filter,
+a summing amplifier around which we can set the filters gain and its damping feedback network.
+The output signals from all three op-amp stages are fed back to the input
+allowing us to define the state of the circuit.
+The state variable filter is a type of multiple-feedback filter circuit
+that can produce all three filter responses, Low Pass, High Pass and Band Pass
+simultaneously from the same single active filter design, and derivation
+like Notch, Peak, Allpass…</p>
+
+<h3 id="robert-bristow-johnsons-svf-biquad">Robert Bristow Johnson’s SVF Biquad</h3>
+
+<p>This filter transfer functions were derived from analog prototypes (that
+are shown below for each EQ filter type) and had been digitized using the
+Bilinear Transform by Robert Bristow-Johnson: https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// Robert Bristow-Johnson's Biquad Filter - Direct Form 1
+// https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html
+biquad(i, cf, q) = _ : coefficients(i) : biquadFilter
+     with{
+         biquadFilter(a0, a1, a2, b1, b2) = biquadFilter
+             with{
+                 biquadFilter =  _ &lt;: _, (mem  &lt;: (_, mem)) : (_ * a0, _ * a1, _ * a2) :&gt; _ :  
+                                 ((_, _) :&gt; _) ~ (_ &lt;: (_, mem) : (_ * -b1, _ * -b2) :&gt; _);
+             };
+
+         // Angular Frequency formula
+         omega(x) = (2 * ma.PI * x) / ma.SR;
+         // Angular Frequency in the sine domain
+         sn(x) = sin(omega(x));
+         // Angular Frequency in the cosine domain
+         cs(x) = cos(omega(x));  
+         // Alpha
+         alpha(cf0, q0) = sin(omega(cf0)) / (2 * q0);
+
+         // Robert Bristow-Johnson's Biquad Filter - Coefficents
+         // Lowpass Filter
+         coefficients(0) = a0, a1, a2, b1, b2, _
+         with{
+             b0 = (1 + alpha(cf, q));
+             a0 = ((1 - cs(cf)) / 2) / b0;
+             a1 = (1 - cs(cf)) / b0;
+             a2 = ((1 - cs(cf)) / 2) / b0;
+             b1 = (-2 * cs(cf)) / b0;
+             b2 = (1 - alpha(cf, q)) / b0;
+         };
+         // Highpass filter
+         coefficients(1) = a0, a1, a2, b1, b2, _
+         with{
+             b0 = (1 + alpha(cf, q));
+             a0 = ((1 + cs(cf)) / 2) / b0;
+             a1 = (-1 * (1 + cs(cf))) / b0;
+             a2 = ((1 + cs(cf)) / 2) / b0;
+             b1 = (-2 * cs(cf)) / b0;
+             b2 = (1 - alpha(cf, q)) / b0;
+         };
+         // Bandpass Filter
+         coefficients(2) = a0, a1, a2, b1, b2, _
+         with{
+             b0 = 1 + alpha(cf, q);
+             a0 = alpha(cf, q) / b0;
+             a1 = 0;
+             a2 = - alpha(cf, q) / b0;
+             b1 = (-2 * cs(cf)) / b0;
+             b2 = (1 - alpha(cf, q)) / b0;
+         };
+         // Notch filter
+         coefficients(3) = a0, a1, a2, b1, b2, _
+         with{
+             b0 = 1 + alpha(cf, q);
+             a0 = 1 / b0;
+             a1 = (-2 * cs(cf)) / b0;
+             a2 = 1 / b0;
+             b1 = (-2 * cs(cf)) / b0;
+             b2 = (1 - alpha(cf, q)) / b0;
+         };
+         // Peaking EQ filter
+         coefficients(4) = a0, a1, a2, b1, b2, _
+         with{
+             A = 10;
+             b0 = 1 + (alpha(cf, q) / A);
+             a0 = (1 + (alpha(cf, q) * A)) / b0;
+             a1 = (-2 * cs(cf)) / b0;
+             a2 = (1 - (alpha(cf, q) * A)) / b0;
+             b1 = (-2 * cs(cf)) / b0;
+             b2 = (1 - (alpha(cf, q) / A)) / b0;
+         };
+         // Low Shelf Filter
+         coefficients(5) = a0, a1, a2, b1, b2, _
+         with{
+             //dbGain 20;
+             A  = pow(10, -20 /40);
+             beta = sqrt(A + A);
+             b0 = (A + 1) + (A - 1) * cs(cf) + beta * alpha(cf, q);
+             a0 = (A * ((A + 1) - (A - 1) * cs(cf) + beta * alpha(cf, q))) /b0;
+             a1 = (2 * A * ((A - 1) - (A + 1) * cs(cf))) / b0;
+             a2 = (A * ((A + 1) - (A - 1) * cs(cf) - beta * alpha(cf, q))) /b0;
+             b1 = (-2 * ((A - 1) + (A + 1) * cs(cf))) / b0;
+             b2 = ((A + 1) + (A - 1) * cs(cf) - beta * alpha(cf, q)) / b0;
+         };
+         // High Shelf Filter
+         coefficients(6) = a0, a1, a2, b1, b2, _
+         with{
+             //dbGain 20;
+             A  = pow(10, -20 /40);
+             beta = sqrt(A + A);
+             b0 = (A + 1) - (A - 1) * cs(cf) + beta * alpha(cf, q);
+             a0 = (A * ((A + 1) + (A - 1) * cs(cf) + beta * alpha(cf, q))) /b0;
+             a1 = (2 * A * ((A - 1) + (A + 1) * cs(cf))) / b0;
+             a2 = (A * ((A + 1) + (A - 1) * cs(cf) - beta * alpha(cf, q))) /b0;
+             b1 = (2 * ((A - 1) - (A + 1) * cs(cf))) / b0;
+             b2 = ((A + 1) - (A - 1) * cs(cf) - beta * alpha(cf, q)) / b0;
+         };
+};
+//process = (1000, 1, _) : biquad(0);
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="onepole-topology-preserving-transforms-tpt">ONEPOLE Topology Preserving Transforms (TPT)</h3>
+
+<p>TPT version of the One-Pole Filter by Vadim Zavalishin
+reference: https://www.native-instruments.de/fileadmin/redaktion_upload/pdf/KeepTopology.pdf
+the topology-preserving transform approach, can be considered as
+a generalization of bilinear transform, zero-delay feedback and trapezoidal integration methods. This results in digital filters having nice amplitude and phase
+responses, nice time-varying behavior and plenty of options for nonlinearities</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// Vadim Zavalishin's Onepole TPT Filter (Topology Preserving Transform)  
+onePoleTPT(cf, x) = loop ~ _ : ! , si.bus(3)
+     with {
+         g = tan(cf * PI * ma.T);
+         G = g / (1.0 + g);
+         loop(s) = u , lp , hp , ap
+             with {
+             v = (x - s) * G; u = v + lp; lp = v + s; hp = x - lp; ap = lp - hp;
+             };
+     };
+//process = onePoleTPT;
+
+// Lowpass and Highpass TPT
+LPTPT(cf, x) = onePoleTPT(cf, x) : (_ , ! , !);
+HPTPT(cf, x) = onePoleTPT(cf, x) : (! , _ , !);
+
+// Allpass TPT
+APTPT(cf, x) = onePoleTPT(cf, x) : (!, !, _);
+</code></pre></div></div>
+
+<h3 id="vadim-zavalishins-svf-topology-preserving-transform">Vadim Zavalishin’s SVF Topology Preserving Transform</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// Vadim Zavalishin's SVF TPT filter (Topology Preserving Transform)
+SVFTPT(Q, cf, x) = loop ~ si.bus(2) : (! , ! , _ , _ , _ , _ , _)
+     with {
+         g = tan(cf * ma.PI * ma.T);
+         R = 1.0 / (2.0 * Q);
+         G1 = 1.0 / (1.0 + 2.0 * R * g + g * g);
+         G2 = 2.0 * R + g;
+         loop(s1, s2) = u1 , u2 , lp , hp , bp * 2.0 * R , x - bp * 4.0 * R , bp
+             with {
+                 hp = (x - s1 * G2 - s2) * G1;
+                 v1 = hp * g;
+                 bp = s1 + v1;
+                 v2 = bp * g;
+                 lp = s2 + v2;
+                 u1 = v1 + bp;
+                 u2 = v2 + lp;
+             };
+     };
+
+// HP - LP SVF  
+LPSVFTPT(Q, cf, x) = SVFTPT(Q, cf, x) : (_ , ! , ! , ! , !);
+HPSVFTPT(Q, cf, x) = SVFTPT(Q, cf, x) : (! , _ , ! , ! , !);
+
+// Normalized Bandpass SVF  
+BPSVFTPT(Q, cf, x) = SVFTPT(Q, cf, x) : (! , ! , _ , ! , !);
+
+NotchSVFTPT(Q, cf, x) = x - BPSVF(Q, cf, x);
+APSVFTPT(Q, cf, x) = SVFTPT(Q, cf, x) : (! , ! , ! , _ , !);
+PeakingSVFTPT(Q, cf, x) = LPSVF(Q, cf, x) - HPSVF(Q, cf, x);
+BP2SVFTPT(Q, cf, x) = SVFTPT(Q, cf, x) : (! , ! , ! , ! , _);
+
+// Bandpass Bandwidth SVF
+BPBWSVFTPT(BW, CF, x) = BPSVF(clip(20000, EPS, (CF / BW)), CF, x);
+</code></pre></div></div>]]></content><author><name></name></author><category term="jekyll" /><category term="update" /><summary type="html"><![CDATA[Preludes to Filter Syntax in Faust]]></summary></entry><entry><title type="html">Digital Reverberation - a tutorial in Faust</title><link href="http://localhost:4000/jekyll/update/2025/03/04/Digital-Reverberation.html" rel="alternate" type="text/html" title="Digital Reverberation - a tutorial in Faust" /><published>2025-03-04T17:10:18+01:00</published><updated>2025-03-04T17:10:18+01:00</updated><id>http://localhost:4000/jekyll/update/2025/03/04/Digital%20Reverberation</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2025/03/04/Digital-Reverberation.html"><![CDATA[<p>Digital reverberation is a continually relevant and widely discussed topic in the realms of computer music and Digital Signal Processing, as well as electroacoustic music in general. Its applications and studies have involved both commercial and academic sectors. Consequently, over time, a complex history has developed, characterized by numerous ramifications and implications, leading to a proliferation of various methods and implementation topologies. In this study, we will delve into the subject in detail, examining the main existing implementations.</p>
+
+<h2 id="reverberation">Reverberation</h2>
+
+<p>Reverberation is the persistence of sound after it has been produced. It is an acoustic phenomenon related to the reflection of sound waves by an obstacle placed in front of the sound source. Assumptions that determine the perception of a reverberation phenomenon:</p>
+
+<ol>
+  <li>The human ear cannot distinguish two sounds if they are perceived less than 100 milliseconds apart.</li>
+  <li>The speed of sound in the air at 20°C is approximately 340 m/s.</li>
+  <li>The sound source and the listener are in the same location facing the obstacle.</li>
+</ol>
+
+<p>Given these assumptions, in an open space, reverberation can be discussed when the obstacle is less than 17 meters from the sound source. Indeed, up to this distance, the path of the sound wave from the source to the obstacle and back is less than 34 meters, and therefore the sound takes less than 100 milliseconds to return to the starting point, blending into the listener’s ear with the original sound. If the obstacle is more than 17 meters away from the source, then the delay of the reflected sound compared to the direct sound is more than 100 milliseconds, and the two sounds are therefore distinct. In this case, it is called an echo.</p>
+
+<h3 id="duration-of-reverberation">Duration of Reverberation</h3>
+
+<p>The factors that influence the duration of reverberation are multiple. The most influential ones are:</p>
+
+<ol>
+  <li>
+    <p>Room size</p>
+
+    <ul>
+      <li>Larger rooms produce longer reverberations.</li>
+      <li>Small rooms produce shorter reverberations.</li>
+    </ul>
+  </li>
+  <li>
+    <p>Materials</p>
+
+    <ul>
+      <li>Hard materials like ceramics and plastics reflect sound more.</li>
+      <li>Soft materials like wood absorb much more sound.</li>
+    </ul>
+
+    <p>For these reasons related to materials, a small room like a bathroom has longer reverberation times than a large wooden room.</p>
+  </li>
+</ol>
+
+<p>The best way to listen to the reverberation of a reverberant space is to produce an impulsive sound; like a clap of hands or a snap of fingers.</p>
+
+<h3 id="reverberation-in-music">Reverberation in Music</h3>
+
+<p>Music has made extensive use of reverberation for thousands of years. Archaeologists believe that reverberation produced by caves was used in ancient ceremonies. Many cathedrals in Europe have reverberations lasting more than 10 seconds, and the choral music of certain eras worked particularly well by exploiting the reverberation inside these cathedrals. In fact, the reverberation of individual notes overlaps on subsequent notes, transforming a monophonic melody into a polyphonic sound.</p>
+
+<h3 id="reflections">Reflections</h3>
+
+<p>A standard room has 6 surfaces:</p>
+
+<ul>
+  <li>Right wall</li>
+  <li>Left wall</li>
+  <li>Front wall</li>
+  <li>Back wall</li>
+  <li>Ceiling</li>
+  <li>Floor</li>
+</ul>
+
+<p>A sound, when produced, bounces off the surfaces and is subsequently heard, producing what are called:</p>
+
+<ol>
+  <li>First-order reflections</li>
+</ol>
+
+<p>Each of these will produce another 6 echoes: 6 echoes, each bouncing off the 6 surfaces, will produce 36 echoes; these are called:</p>
+
+<ol>
+  <li>Second-order reflections</li>
+</ol>
+
+<p>producing a total of 42 echoes in a very short period of time, and so on… Of all these echoes, none is perceived individually, but rather their ensemble and dispersion over time are perceived. Reverberation is thus composed of thousands of echoes of the original sound that persist and decay over time.</p>
+
+<h3 id="artificial-reverberation-models">Artificial Reverberation Models</h3>
+
+<p>Reverberation is artificial when it is not present in the room where the recording is taking place but is instead added later.</p>
+
+<ol>
+  <li>
+    <p>Tape echo
+A particular magnetic tape recorder/player is used, which constantly moves a tape loop inside a mechanism with a fixed recording head and a mobile playback head. The signal recorded by the first head is read by the second and mixed with the original, generating the effect. These devices are bulky and heavy. Like in any tape recording, there is background noise similar to hiss, significantly higher than that produced with digital technologies.</p>
+  </li>
+  <li>
+    <p>Spring reverb
+The signal is passed, through a transducer, through a metal spiral (the spring). At the other end of the spring, a transducer equivalent to the first one reintroduces the signal into the amplification circuit, mixing it with the original. The signal taken from the second transducer is slightly delayed compared to the one applied to the first, creating the reverberation effect in the listener’s ear.</p>
+  </li>
+  <li>
+    <p>Chamber reverb
+Following the spring reverb model, in a box acoustically isolated from the outside, a curved tube is inserted to create the longest possible path. At one end of the tube is placed a small loudspeaker, while at the other end there is a microphone. The sound emitted by the loudspeaker will take some time to travel the entire tube and reach the microphone, thus generating the necessary delay. The signal taken from the microphone will be fed back into the mixing console, mixed with the original.</p>
+  </li>
+  <li>
+    <p>Plate reverb
+Similar to spring reverb, but with a large metal plate instead of the spring. It has two transducers attached to its surface and works in a similar way, although its quality is significantly higher.</p>
+  </li>
+</ol>
+
+<h2 id="digital-reverbs">Digital Reverbs</h2>
+
+<p>They are produced by a computer or dedicated DSP integrated circuits.
+There are integrated circuits on the market that include A/D and D/A converters,
+memories, and timing circuits.
+An acoustic signal is transduced and converted into numbers that enter memories.
+In fact, the bytes are “scrolled” from one bank to the next until the last one is reached.
+The digital signal taken from the last memory is then reconverted into analog and mixed
+with the original signal, obtaining the reverberation effect;
+the farther the read point from the write point, the longer the echo time will be.
+The size of these read and write memories is called delay line, and it is expressed in samples.
+The large capacity of RAM memories allows achieving delays
+of several seconds and therefore smoothly transition from reverb to echo.
+The strategy used afterwards is to feed back the output of the delay line by adding it to the input,
+thus creating a feedback circuit.
+All this process is done because modern computers are very powerful,
+but they are not yet powerful enough to generate all the reflections
+heard in a large room, one by one.
+Rather, the goal of creating digital reverbs is to implement models and strategies
+to replicate the impression of the reverberation of a room.
+The replication process has generated in the history of digital reverbs true and proper typical sounds different from each other
+which can be implemented and preferred by musicians for aesthetic reasons.</p>
+
+<h1 id="digital-reverb-in-faust">Digital Reverb in FAUST</h1>
+
+<p>Experiments and algorithms of digital reverb models in the FAUST language (GRAME)</p>
+
+<h2 id="delay-lines-in-faust">Delay Lines in Faust</h2>
+
+<p>Delay lines in Faust are divided into the following categories:
+mem - indicates a single sample delay
+@ - indicates a number (e.g., 44100) of variable delay samples
+x’- x indicates any input and: ‘ a sample delay, ‘‘(2), etc.
+rdtable - indicates a read-only table
+rwtable - indicates a read and write table.</p>
+
+<p>Through delay lines,
+we can create a Dirac impulse, which represents
+our minimum unit, namely the single sample
+by putting a number 1 and subtracting the same value from it
+but doing it at a delayed sample.</p>
+
+<p>Example:</p>
+<pre><code class="language-faust">// import Standard Faust library
+// https://github.com/grame-cncm/faustlibraries/
+import("stdfaust.lib");
+
+// Dirac Impulse with delay lines - Impulse at Compile Time
+dirac = 1 - 1';
+process = dirac, dirac;
+</code></pre>
+
+<h2 id="some-methods-for-implementing-recursive-circuits-in-the-faust-language">Some Methods for Implementing Recursive Circuits in the Faust Language</h2>
+
+<p>We will illustrate 3 main methods:</p>
+
+<ul>
+  <li>
+    <p>Writing the code line with internal recursion:</p>
+
+    <p>in this way the tilde ~ operator sends the signal
+output to itself, to the first available input
+creating a feedback circuit.
+One way to force the operator to point to a certain point
+in the code, is to put parentheses (), in this way ~
+will point to the input before the parenthesis.</p>
+  </li>
+  <li>
+    <p>A second method consists of using with{} .</p>
+
+    <p>You can define a function in which are passed
+the various arguments of the function that control
+the parameters of the code,
+and say that that function is equal to
+exit from the with with ~ _</p>
+
+    <p>Example:</p>
+    <pre><code class="language-faust">    function_with(argument1, argument2) = out_with ~ _
+     with{  
+      section1 = _ * argument1;
+      section2 = argument1 * argument2;
+      out_with = section2;
+      };
+
+      where out_with ~ _ returns to itself.
+</code></pre>
+  </li>
+</ul>
+
+<p>Moreover, with in Faust allows declaring variables
+that are not pointed to from outside the code but only
+from the belonging function; in this case
+the function to which with belongs is “function_with”.</p>
+
+<ul>
+  <li>
+    <p>A third method is to use the letrec environment.</p>
+
+    <p>with this method we can write a signal
+recursively, similar to how
+recurrence equations are written.</p>
+  </li>
+</ul>
+
+<p>Example:</p>
+<pre><code class="language-faust">// import Standard Faust library  
+// https://github.com/grame-cncm/faustlibraries/  
+import("stdfaust.lib");
+
+// letrec function
+lowpass(cf, x) = y
+// letrec definition
+     letrec {
+         'y = b0 * x - a1 * y;
+     }
+     // inside the letrec function
+     with {
+         b0 = 1 + a1;
+         a1 = exp(-w(cf)) * -1;
+         w(f) = 2 * ma.PI * f / ma.SR;
+     };
+
+ // Output of the letrec function
+ process = lowpass(100, no.noise) &lt;: si.bus(2);
+</code></pre>
+
+<h2 id="conversion-of-milliseconds-to-samples-and-vice-versa">Conversion of Milliseconds to Samples and Vice Versa</h2>
+
+<h3 id="conversion-from-milliseconds-to-samples">Conversion from Milliseconds to Samples</h3>
+
+<p>Function for Conversion from Milliseconds to Samples:
+we input the time in milliseconds,
+and the function gives us the value in samples.</p>
+
+<p>For example, if we have a sampling frequency
+of 48,000 samples per second,
+it means that 1000ms (1 second) is represented
+by 48,000 parts, and therefore a single unit
+of time like 1 ms. Corresponds digitally to 48 samples.</p>
+
+<p>For this reason, we divide the sampling frequency
+by 1000ms, resulting in a total number of samples
+that corresponds to 1 ms. in the digital world at
+a certain sampling frequency.</p>
+
+<p>And then we multiply the result of this operation
+by the total number of milliseconds we want to obtain as
+a representation in samples.
+If we multiply *10. For example, we will get
+480 samples at a sampling frequency
+of 48,000 samples per second.</p>
+
+<h3 id="conversion-from-samples-to-milliseconds">Conversion from Samples to Milliseconds</h3>
+
+<p>Function for Conversion from Samples to Milliseconds:
+we input a total number of samples,
+of which we need to know the overall duration
+in milliseconds based on our sampling frequency.</p>
+
+<p>We know that a sampling frequency
+corresponds to a set of values that express
+together the duration of 1 second (1000 ms).</p>
+
+<p>It means, for example,
+that at a sampling frequency of 48,000
+samples per second,
+1000 milliseconds are represented by 48,000 parts.
+So if we divide our 1000ms. /
+into the 48,000 parts which are the samples of our system,
+we would get the duration in milliseconds of a single sample
+at that sampling frequency,
+in this case therefore:
+1000 / 48,000 = 0.02ms.
+And so the duration in milliseconds of a single sample at 48,000
+samples per second, is 0.02 milliseconds.
+If we multiply the obtained number *
+a total number of samples, we will get the time in milliseconds
+of those samples for that sampling frequency used.</p>
+
+<p>Obviously, as can be deduced from the considerations,
+as the sampling frequency increases,
+the temporal duration of a single sample decreases,
+and thus a greater definition.</p>
+
+<h2 id="phase-alignment-of-feedback">Phase Alignment of Feedback</h2>
+
+<p>In the digital domain, the feedback of a
+delay line, when applied, costs by default one sample delay.
+Feedback = 1 Sample</p>
+
+<p>At the moment I decide therefore to put
+inside the feedback a number
+of delay samples,
+we can take for example 10 samples
+in our delay line, it means that,
+The direct signal will come out for delay samples at:</p>
+
+<p>input in the delay signal –&gt; output from the delay 10samp</p>
+
+<p>1st Feedback:
+output from the delay at 10samp + 1 feedback =
+input in the delay 11samp –&gt; output from the delay 21samp</p>
+
+<p>2nd Feedback:
+output from the delay at 21samp + 1 feedback =
+input in the delay 22samp –&gt; output from the delay 32samp</p>
+
+<p>3rd Feedback:
+output from the delay at 32samp + 1 feedback =
+input in the delay 33samp –&gt; output from the delay 43samp</p>
+
+<p>and so on…</p>
+
+<p>we can therefore notice immediately that we will not have
+the correct delay value required inside the same,
+because of the sample delay that occurs at the moment
+when I decide to create a feedback circuit.
+if we use the method of subtracting one sample from the delay line,
+we will have this result:</p>
+
+<p>input in the delay signal –&gt; -1, output from the delay 9samp</p>
+
+<p>1st Feedback:
+output from the delay at 9samp + 1 feedback =
+input in the delay 10samp –&gt; -1, output from the delay 19samp</p>
+
+<p>2nd Feedback:
+output from the delay at 19samp + 1 feedback =
+input in the delay 20samp –&gt; -1, output from the delay 29samp</p>
+
+<p>3rd Feedback:
+output from the delay at 29samp + 1 feedback =
+input in the delay 30samp –&gt; -1, output from the delay 39samp</p>
+
+<p>and so on…</p>
+
+<p>we can therefore notice that with this method,
+compared to the previous one we will have as input to the delay line
+always the number of delay samples required.
+But we notice that from the first output of the delayed signal
+subtracting -1 we have one sample delay
+less than we would like.
+To realign everything, we just need to add one sample delay
+to the overall output of the circuit, thus having from the first output:</p>
+
+<p>input in the delay signal –&gt; -1, output from the delay 9samp +1 = 10out</p>
+
+<p>1st Feedback:
+output from the delay at 9samp + 1 feedback =
+input in the delay 10samp –&gt; -1, output from the delay 19samp +1 = 20out</p>
+
+<p>and so on…</p>
+
+<p>Let’s proceed with an implementation:</p>
+<pre><code class="language-faust">// import Standard Faust library  
+// https://github.com/grame-cncm/faustlibraries/  
+import("stdfaust.lib");
+
+sampdel = ma.SR;  
+// sample rate - ma.SR
+
+process =   _ :  
+             // input signal goes in
+             +~ @(sampdel -1) *(0.8)  
+             // delay line with feedback: +~
+             : mem
+             // output goes to a single sample delay
+             &lt;: si.bus(2);
+</code></pre>
+
+<h2 id="t60-decay-calculation">T60 Decay Calculation</h2>
+
+<p>The term “T60” in the context of digital reverberation refers to the reverberation time. The reverberation time is a measure of the duration for which sound persists in a space after the sound source has stopped. It indicates how quickly the sound energy decreases over time.</p>
+
+<p>The T60 value represents the time it takes for the sound level to decrease by 60 decibels (dB) compared to its initial value. In other words, it is the time taken for the sound energy to decay by 60 dB. A long T60 indicates prolonged reverberation, while a short T60 indicates shorter reverberation.</p>
+
+<p>The formula below uses the relationship between the T60 decay time and the number of filter samples to calculate the amplification gain necessary. The result of the calculation is a linear value ranging from 0 to 1, representing the amplification to be applied to the filter feedback.</p>
+
+<p>Insert the following arguments into the function:</p>
+
+<ul>
+  <li>
+    <p>The value in samples of the filter
+you are using for the delay.</p>
+  </li>
+  <li>
+    <p>The decay value in T60
+(decay time of 60 dB in seconds)</p>
+  </li>
+  <li>
+    <p>= GET as output from the function,
+the value to be passed as amplification
+to the filter feedback to achieve
+the desired T60 decay time</p>
+  </li>
+</ul>
+
+<pre><code class="language-faust">// T60 DECAY TIME from Milliseconds
+// (ms, T60) = ms delay of the filter, seconds we want for t60 decay
+t60_ms(ms, t60) = pow(0.001, (ms / 1000) / t60);
+
+// formula 2
+// (samps,seconds) = give: samples of the filter, seconds we want for t60 decay
+dect60(samps,seconds) = 1/(10^((3*(((1000 / ma.SR)*samps)/1000))/seconds));
+</code></pre>
+
+<h1 id="digital-filters">Digital Filters</h1>
+
+<h3 id="onezero-filter-1st-order-fir">ONEZERO FILTER (1st Order FIR)</h3>
+
+<p>_ represents the input signal, (_ denotes the signal)
+    it is then split into two parallel paths &lt;:
+    one delayed by one sample _’ (‘ denotes one sample delay)
+    and one without delay , _ (, denotes transition to the second path)
+    they are then summed into a single signal :&gt; _ ;
+    the delayed signal has a feedforward amplitude control * feedforward
+    there is a general amplitude control * outgain
+    on the output function onezeroout</p>
+
+<pre><code class="language-faust"> // import Standard Faust library
+ // https://github.com/grame-cncm/faustlibraries/
+ import("stdfaust.lib");
+
+
+ // (G) = G=give amplitude 0-1(open-close) to the delayed signal
+ ozf(G) = _ &lt;: ((_ : mem * G), _) :&gt; +;
+
+ // out
+ process = ozf(0.1);
+</code></pre>
+
+<h3 id="onepole-filter-1st-order-iir">ONEPOLE FILTER (1st Order IIR)</h3>
+
+<p>+~ is the summation, and the feedback
+    of the arguments inside parentheses ()
+    _ represents the input signal, (_ denotes the signal)
+    delayed by one sample _ (automatically in the feedback)
+    which enters : into the gain control of the feedback * 1-feedback
+    the same feedback controls the input amplification
+    of the signal not injected into the feedback
+    there is a general amplitude control * outgain
+    on the output function onezeroout</p>
+
+<pre><code class="language-faust"> // import Standard Faust library
+ // https://github.com/grame-cncm/faustlibraries/
+ import("stdfaust.lib");
+
+ // (G)  = give amplitude 1-0 (open-close) for the lowpass cut
+ // (CF) = Frequency Cut in HZ
+ OPF(CF,x) = OPFFBcircuit ~ _  
+     with{
+         g(x) = x / (1.0 + x);
+         G = tan(CF * ma.PI / ma.SR):g;
+         OPFFBcircuit(y) = x*G+(y*(1-G));
+         };
+
+ process = OPF(20000) &lt;: si.bus(2);
+</code></pre>
+
+<h3 id="onepole-topology-preserving-transforms-tpt">ONEPOLE Topology Preserving Transforms (TPT)</h3>
+
+<p>TPT version of the One-Pole Filter by Vadim Zavalishin
+reference: (by Will Pirkle)
+http://www.willpirkle.com/Downloads/AN-4VirtualAnalogFilters.2.0.pdf</p>
+
+<pre><code class="language-faust"> // import Standard Faust library
+ // https://github.com/grame-cncm/faustlibraries/
+ import("stdfaust.lib");
+
+ OnepoleTPT(CF,x) = circuit ~ _ : ! , _
+     with {
+         g = tan(CF * ma.PI / ma.SR);
+         G = g / (1.0 + g);
+         circuit(sig) = u , lp
+             with {
+                 v = (x - sig) * G;
+                 u = v + lp;
+                 lp = v + sig;
+             };
+     };
+
+ // out
+ process = OnepoleTPT(100);
+</code></pre>
+
+<h3 id="feedforward-comb-filter-nth-order-fir">FEEDFORWARD COMB FILTER (Nth Order FIR)</h3>
+
+<p>_ represents the input signal, (_ denotes the signal)
+    it is then split into two parallel paths &lt;:
+    one delayed by @(delaysamples) samples
+    (thus value to be passed externally)
+    and one without delay , _ (, denotes transition to the second path)
+    they are then summed into a single signal :&gt; _ ;</p>
+
+<p>In the feedback, one sample of delay is already present by default,
+hence delaysamples-1.</p>
+
+<p>the delayed signal has a feedforward amplitude control * feedforward</p>
+
+<p>there is a general amplitude control * outgain
+on the output function onezeroout</p>
+
+<pre><code class="language-faust"> // import Standard Faust library
+ // https://github.com/grame-cncm/faustlibraries/
+ import("stdfaust.lib");
+
+ // (t,g) = delay time in samples, filter gain 0-1
+ ffcf(t, g, x) = (x@(t) * g), x :&gt; +;
+ process = _ * .1 : ffcf(100, 1);
+</code></pre>
+
+<h3 id="feedback-comb-filter-nth-order-iir">FEEDBACK COMB FILTER (Nth Order IIR)</h3>
+
+<p>+~ is the summation, and the feedback
+    of the arguments inside parentheses ()
+    _ represents the input signal, (_ denotes the signal)
+    delayed by @(delaysamples) samples
+    (thus value to be passed externally)
+    which enters : into the gain control of the feedback * feedback</p>
+
+<p>In the feedback, one sample of delay is already present by default,
+hence delaysamples-1.</p>
+
+<p>there is a general amplitude control * outgain
+on the output function combfeedbout</p>
+
+<pre><code class="language-faust"> // import Standard Faust library
+ // https://github.com/grame-cncm/faustlibraries/
+ import("stdfaust.lib");
+
+ // Feedback Comb Filter. FBComb(Del,G,signal)  
+ // (Del, G) = DEL=delay time in samples. G=feedback gain 0-1
+ fbcf(del, g, x) = loop ~ _  
+     with {
+         loop(y) = x + y@(del - 1) * g;
+     };
+
+ process = _ * .1 : fbcf(4480, .9);
+</code></pre>
+
+<h3 id="lowpass-feedback-comb-filter-nth-order-iir">Lowpass FEEDBACK COMB FILTER (Nth Order IIR)</h3>
+
+<p>similar to the comb filter, but within the feedback,
+    following the feedback enters the signal : into the onepole.
+    The onepole is a lowpass where the cutoff
+    frequency can be controlled between 0. and 1.
+    In the feedback, one sample of delay is already present by default,
+    hence delaysamples-1.</p>
+
+<pre><code class="language-faust"> // import Standard Faust library
+ // https://github.com/grame-cncm/faustlibraries/
+ import("stdfaust.lib");
+
+ // LPFBC(Del, FCut) = give: delay samps, -feedback gain 0-1-, lowpass Freq.Cut HZ
+ lpfbcf(del, cf, x) = loop ~ _ : !, _
+     with {
+         onepole(CF, x) = loop ~ _  
+             with{
+                 g(x) = x / (1.0 + x);
+                 G = tan(CF * ma.PI / ma.SR):g;
+                 loop(y) = x * G + (y * (1 - G));
+             };
+         loop(y) = x + y@(del - 1) &lt;: onepole(cf), _;
+     };
+ process = _ * .1 : lpfbcf(2000, 10000);
+</code></pre>
+
+<h3 id="allpass-filter">ALLPASS FILTER</h3>
+
+<p>from the sum (+ transitions : to a cable _ and a split &lt;:
+        then @delay and gain, in feedback ~ to the initial sum.
+        filtergain controls the amplitude of the two gain states,
+        which in the filter are the same value but positive and negative,
+        one side *-filtergain and one side *+filtergain.
+        In the feedback, one sample of delay is already present by default,
+        hence delaysamples-1.
+        To maintain the delay threshold of the value delaysamples,
+        a mem delay (of the subtracted sample) is added
+        at the end</p>
+
+<pre><code class="language-faust"> // Allpass
+ // (t,g) = give: delay in samples, feedback gain 0-1
+ apf(t, g) =    _ : (+ : _ &lt;: @ (t  - 1), * (- g)) ~ * (g) : mem, _ : + : _;
+ process = _ * .1 &lt;: apf(100, .5);
+</code></pre>
+
+<h3 id="modulated-allpass-filter">Modulated ALLPASS FILTER</h3>
+
+<pre><code class="language-faust">// delay modulated : mod = mod source +/- 1, t = del in samps, tMod = mod in samps
+delaymod(mod, t, tMod) = de.fdelay(tMax, modIndx)
+with{
+    tMax = t + tMod;
+    modIndx = t + mod * tMod;
+};
+
+// modulated Allpass filter
+apfMod(mod, t, tMod, g) = _ : (+ : _ &lt;: delaymod(mod, t - 1, tMod), * (- g)) ~ * (g) : mem, _ : + : _;
+
+process = apfMod(os.osc(0.10), 19200, 100, 0.7)
+</code></pre>
+
+<h1 id="topologies-and-design-of-digital-reverbs">Topologies and Design of Digital Reverbs</h1>
+
+<h3 id="chamberlin-reverb">Chamberlin Reverb</h3>
+
+<p>The Chamberlin Reverb is named after Hal Chamberlin, a pioneer in digital sound processing. This reverberation model was first introduced in his seminal book, Musical Applications of Microprocessors (1979).
+At its core, the Chamberlin Reverb uses a network of all-pass filters (APF) to create a dense and natural-sounding reverberation effect.
+The model is particularly effective at simulating small acoustic spaces, such as rooms or chambers, and is designed with simplicity in mind, making it computationally efficient. This efficiency made it suitable for the early digital processors with limited resources.</p>
+
+<pre><code class="language-faust">// Chamberlin Reverb
+chamberlinReverb = ap3ch &lt;: apout1ch, apout2ch
+with {
+    ap3ch = apf(msasamps(49.6), 0.75) : apf(msasamps(34.75), 0.72) : apf(msasamps(24.18), 0.691);
+    apout1ch = apf(msasamps(17.85), 0.649) : apf(msasamps(10.98), 0.662);
+    apout2ch = apf(msasamps(18.01), 0.646) : apf(msasamps(10.82), 0.666);
+};
+process = chamberlinReverb;
+</code></pre>
+
+<h3 id="chamberlin-reverb-with-decay-t60">Chamberlin Reverb with Decay T60</h3>
+
+<p>This version includes a decay time T60 control in the comb-allpass filters, representing the time required for the signal to decay by 60 dB.</p>
+
+<pre><code class="language-faust">// Chamberlin Reverb with T60 Decay
+chamberlinDecay(seconds) = ap3ch &lt;: apout1ch, apout2ch
+with {
+    ap3ch = apf(msasamps(49.6), t60_ms(49.6, seconds)) :
+            apf(msasamps(34.75), t60_ms(34.75, seconds)) :
+            apf(msasamps(24.18), t60_ms(24.18, seconds));
+    apout1ch = apf(msasamps(17.85), t60_ms(17.85, seconds)) :
+               apf(msasamps(10.98), t60_ms(10.98, seconds));
+    apout2ch = apf(msasamps(18.01), t60_ms(18.01, seconds)) :
+               apf(msasamps(10.82), t60_ms(10.82, seconds));
+};
+process = chamberlinDecay(10);
+</code></pre>
+
+<h3 id="schroeder-chowning-satrev-reverberator">Schroeder-Chowning SATREV Reverberator</h3>
+
+<p>The Schroeder-Chowning SATREV Reverberator is a landmark in the history of algorithmic reverb design, based on the design proposed by Manfred Schroeder and refined by John Chowning, this model combines 4 parallel comb filters with 3 serial all-pass filters (drawn from a 1971 MUS10 software listing).</p>
+
+<pre><code class="language-faust">// Schroeder-Chowning SATREV Reverberator
+satreverb = _ * 0.2 &lt;: fbcfSchroeder(901, 0.805),
+    fbcfSchroeder(778, 0.827), fbcfSchroeder(1011, 0.783),
+    fbcfSchroeder(1123, 0.764) :&gt; apf(125, 0.7) :
+    apf(42, 0.7) : apf(12, 0.7) &lt;: _ , _ * -1;
+process = satreverb;
+</code></pre>
+
+<h3 id="schroeder-samson-box-reverberator">Schroeder Samson Box Reverberator</h3>
+<p>In October 1977, CCRMA took delivery of the Systems Concepts Digital Synthesizer, affectionately known as the ``Samson Box,’’ named after its designer Peter Samson.
+This reverberator developed for this system, which remains known as JCREV, builds upon the earlier reverberation models by Schroeder but expanding on them with improvements that catered to more complex, real-time audio processing requirements.
+This model includes 3 serial all-pass filters and 4 parallel comb filters.</p>
+
+<pre><code class="language-faust">// Schroeder Samson Box Reverberator
+jcreverb = _ * 0.06 : apf(347, 0.7) : apf(113, 0.7) :
+    apf(37, 0.7) &lt;: fbcfSchroeder(1601, 0.802), fbcfSchroeder(1867, 0.733),
+    fbcfSchroeder(2053, 0.753), fbcfSchroeder(2251, 0.733) :
+    mix_mtx
+with {
+    mix_mtx = _,_,_,_ &lt;: psum, - psum, asum, - asum : _,_,_,_;
+    psum = _,_,_,_ :&gt; _;
+    asum = *(-1), _, *(-1), _ :&gt; _;
+};
+process = jcreverb;
+</code></pre>
+
+<h3 id="moorer-reverb">Moorer Reverb</h3>
+
+<p>James A. Moorer’s 1979 design for digital reverberation was one of the earliest to build upon the work of Manfred R. Schroeder, refining and expanding on his ideas in significant ways. Moorer’s design, as outlined in his seminal paper “About This Reverberation Business”, introduced crucial improvements to digital reverb algorithms that continue to influence modern reverberation models.
+A key innovation in Moorer’s approach was the use of a tapped delay line to simulate early reflections—an important feature in the perception of acoustic space. The early reflections, rather than the later reverberant tail, play a more prominent role in how we perceive the size and shape of an environment. The tapped delay line in Moorer’s model could be adjusted with specific delay times and gain structures to approximate the reflections of an actual acoustic space, such as a concert hall. In his article, Moorer provides a 19-tap delay line based on a geometric simulation of the Boston Symphony Hall. He omits the first tap, which has a delay time of 0 and a gain of 1, as it represents the original dry signal.
+Additionally, Moorer enhanced his reverb model by incorporating a first-order low-pass filter in the feedback loop of the six comb filters. This filter simulates the absorption effects of air, which are influenced by factors such as humidity, temperature, the frequency of sound, and the distance from the sound source. Moorer discusses how atmospheric conditions affect the intensity of sound as it travels, and this low-pass filter helped account for the natural damping of higher frequencies over distance.
+This combination of early reflections through a tapped delay line and the low-pass feedback filters for air absorption marked a significant step forward in creating more realistic digital reverberation, and Moorer’s work laid the foundation for many of the reverberation algorithms in use today.</p>
+
+<pre><code class="language-faust">// Moorer Reverb
+moorerReverb = _ * 0.1 : earlyReflections &lt;: combSection + _
+with {
+    earlyReflections =  _ &lt;:
+        (_ @ sasamps(0.0043)) * 0.841,
+        (_ @ sasamps(0.0215)) * 0.504,
+        (_ @ sasamps(0.0225)) * 0.491,
+        (_ @ sasamps(0.0268)) * 0.379,
+        (_ @ sasamps(0.0270)) * 0.380,
+        (_ @ sasamps(0.0298)) * 0.346,
+        (_ @ sasamps(0.0458)) * 0.289,
+        (_ @ sasamps(0.0485)) * 0.272,
+        (_ @ sasamps(0.0572)) * 0.192,
+        (_ @ sasamps(0.0587)) * 0.193,
+        (_ @ sasamps(0.0595)) * 0.217,
+        (_ @ sasamps(0.0612)) * 0.181,
+        (_ @ sasamps(0.0707)) * 0.180,
+        (_ @ sasamps(0.0708)) * 0.181,
+        (_ @ sasamps(0.0726)) * 0.176,
+        (_ @ sasamps(0.0741)) * 0.142,
+        (_ @ sasamps(0.0753)) * 0.167,
+        (_ @ sasamps(0.0797)) * 0.134 :&gt; _;
+
+    combSection = _ &lt;:
+        lbcf(sasamps(0.040), 0.95, 0.5),
+        lbcf(sasamps(0.041), 0.95, 0.5),
+        lbcf(sasamps(0.043), 0.95, 0.5),
+        lbcf(sasamps(0.055), 0.95, 0.5),
+        lbcf(sasamps(0.059), 0.95, 0.5),
+        lbcf(sasamps(0.061), 0.95, 0.5) :&gt; _ :
+        apf(sasamps(0.007), -0.09683) @ sasamps(0.0017);
+};
+process = moorerReverb;
+</code></pre>
+
+<h3 id="freeverb">Freeverb</h3>
+
+<p>A more recently developed Schroeder/Moorer Reverberation Simulation
+is <code class="language-plaintext highlighter-rouge">Freeverb</code> – a public domain C++ program by
+<code class="language-plaintext highlighter-rouge">Jezar at Dreampoint</code> used extensively in the
+free-software world.
+It uses four Schroeder allpasses in series and
+eight parallel Schroeder-Moorer filtered-feedback
+comb-filters for each audio channel,
+and is said to be especially well tuned.</p>
+
+<pre><code class="language-faust">freeverb = _ * 0.1 : combSection : allpassSection
+with {
+    combSection = _ &lt;:
+    // 1557 samples at 44100 = ms 35.3061218
+    lbcf(msasamps(35.3061218), 0.84, 0.2),
+    // 1617 samples at 44100 = ms 36.6666679
+    lbcf(msasamps(36.6666679), 0.84, 0.2),
+    // 1491 samples at 44100 = ms 33.8095245
+    lbcf(msasamps(33.8095245), 0.84, 0.2),
+    // 1422 samples at 44100 = ms 32.2448997
+    lbcf(msasamps(32.2448997), 0.84, 0.2),
+    // 1277 samples at 44100 = ms 28.9569168
+    lbcf(msasamps(28.9569168), 0.84, 0.2),
+    // 1356 samples at 44100 = ms 30.7482986
+    lbcf(msasamps(30.7482986), 0.84, 0.2),
+    // 1188 samples at 44100 = ms 26.9387760
+    lbcf(msasamps(26.9387760), 0.84, 0.2),
+    // 1116 samples at 44100 = ms 25.3061218
+    lbcf(msasamps(25.3061218), 0.84, 0.2) :&gt; _;
+
+    allpassSection =
+    // 225 samples at 44100 = ms 5.1020408
+    apf(msasamps(5.10204080), -0.5) :
+    // 556 samples at 44100 = ms 12.6077099
+    apf(msasamps(12.6077099), -0.5) :
+    // 441 samples at 44100 = ms 10.0000000
+    apf(msasamps(10.0000000), -0.5) :
+    // 341 samples at 44100 = ms 7.7324262
+    apf(msasamps(7.73242620), -0.5);
+};
+process = freeverb;
+</code></pre>
+
+<h3 id="feedback-delay-network-fdn">Feedback Delay Network (FDN)</h3>
+
+<p>The first ideas originate from Michael Gerzon’s
+Studio Sound reverb articles from 1971 and 1972.
+Later, in 1982, Stautner and Puckette introduced a
+multichannel reverberation algorithm in their paper
+“Designing Multichannel Reverberators.”
+The algorithm, called the Feedback Delay Network (FDN),
+aims to simulate the behavior of reflections
+within a room by using only a series of parallel
+comb filters with interconnected feedback paths.
+Below is a 4x4 example of the general design they proposed.</p>
+
+<pre><code class="language-faust">fdnLossless = (inputPath : delaysPath : hadamardPath : normHadamard) ~
+si.bus(4) : delCompensation
+with{
+    t60(msDel, t60) = pow(0.001, msDel / t60);
+    inputPath = ro.interleave(4, 2) : par(i, 4, (_, _) :&gt; _);
+    delay(ms) = _ @ (msasamps(ms) - 1);
+    delaysPath = delay(68), delay(77), delay(90), delay(99);
+    hadamardPath = hadamard(4);
+    normHadamard = par(i, 4, _ * (1.0 / sqrt(4)));
+    delCompensation = par(i, 4, mem);
+};
+//process = fdnLossless :&gt; par(i, 2, _ / 2);
+
+fdn = (inputPath : opPath : delaysPath : hadamardPath : normHadamard : decay) ~
+si.bus(4) : delCompensation
+with{
+    t60(msDel, t60) = pow(0.001, msDel / t60);
+    inputPath = ro.interleave(4, 2) : par(i, 4, (_, _) :&gt; _);
+    opPath = par(i, 4, op(0.4));
+    delay(ms) = _ @ (msasamps(ms) - 1);
+    delaysPath = delay(68), delay(77), delay(90), delay(99);
+    hadamardPath = hadamard(4);
+    normHadamard = par(i, 4, _ * (1.0 / sqrt(4)));
+    decay = _ * t60_ms(68, 1), _ * t60_ms(77, 1),
+            _ * t60_ms(90, 1), _ * t60_ms(99, 1);
+    delCompensation = par(i, 4, mem);
+};
+process = fdn :&gt; par(i, 2, _ / 2);
+</code></pre>
+
+<h3 id="keith-barr-allpass-loop">Keith Barr Allpass Loop</h3>
+
+<p>Keith Barr was one of the co-founders of MXR,
+back in 1973. After MXR, he founded Alesis.
+Most recently, he designed the FV-1 chip for Spin Semiconductor.
+His Allpass Loop Reverb is a simplified yet effective model,
+utilizing a single allpass filter within a feedback loop.
+When multiple delays and all pass filters are placed into a loop,
+sound injected into the loop will recirculate,
+and the density of any impulse will increase as the signal
+passes successively through the allpass filters.
+The result, after a short period of time,
+will be a wash of sound, completely diffused
+as a natural reverb tail.
+The reverb can usually have a mono input
+(as from a single source),
+but benefits from a stereo output which gives
+the listener a more full, surrounding reverberant image.</p>
+
+<p>Here a Faust porting of: Reverb 1 program from the Spin Semiconductor FV-1 internal ROM</p>
+
+<pre><code class="language-faust">kb_rom_rev1(rt, damp, L, R) = aploop
+with{
+// input allpass sections
+apSec(0) = apf(adaptSR(32768, 156), 0.5) : apf(adaptSR(32768, 223), 0.5) : apf(adaptSR(32768, 332), 0.5) : apf(adaptSR(32768, 548), 0.5);
+apSec(1) = apf(adaptSR(32768, 186), 0.5) : apf(adaptSR(32768, 253), 0.5) : apf(adaptSR(32768, 302), 0.5) : apf(adaptSR(32768, 498), 0.5);
+
+// allpass loop sections
+loopSec(0) = _ @ (adaptSR(32768, 4568) - 1) : _ * rt : _ + (L : apSec(0)) : apfMod(os.osc(0.5), adaptSR(32768, 1251), adaptSR(32768, 20), 0.6) : apf(adaptSR(32768, 1751), 0.6) : op(damp) : op(- 0.05);
+loopSec(1) = _ @ adaptSR(32768, 5859) : _ * rt : apf(adaptSR(32768, 1443), 0.6) : apf(adaptSR(32768, 1343), 0.6) : op(damp) : op(- 0.05);
+loopSec(2) = _ @ adaptSR(32768, 4145) : _ * rt : _ + (R : apSec(1)) : apfMod(os.osc(0.5), adaptSR(32768, 1582), adaptSR(32768, 20), 0.6) : apf(adaptSR(32768, 1981), 0.6) : op(damp) : op(- 0.05);
+loopSec(3) = _ @ adaptSR(32768, 3476) : _ * rt : apf(adaptSR(32768, 1274), 0.6) : apf(adaptSR(32768, 1382), 0.6) : op(damp) : op(- 0.05);
+
+// output delay taps
+outTaps = ((_ * 1.5 @ adaptSR(32768, 2630), _ * 1.2 @ adaptSR(32768, 1943), _ * 1.0 @ adaptSR(32768, 3200), _ * 0.8 @ adaptSR(32768, 4016)) :&gt; +),
+((_ * 1.0 @ adaptSR(32768, 2420), _ * 0.8 @ adaptSR(32768, 2631), _ * 1.5 @ adaptSR(32768, 1163), _ * 1.2 @ adaptSR(32768, 3330)) :&gt; +);
+
+// complete allpass loop
+aploop = (_ : loopSec(0) &lt;: ((loopSec(1) &lt;: ((_ : loopSec(2) &lt;: loopSec(3), _), _)), _)) ~ _ : ro.cross(4) &lt;: outTaps;
+};
+process = kb_rom_rev1(0.95, 0.5);
+</code></pre>
+
+<p>Here another Reverb Model based on the Keith Barr Allpass Loop Reverb.
+A Corey Kereliuk’s implementation of the Reverb.</p>
+
+<pre><code class="language-faust">ck_kbVerb(apfG, krt) = si.bus(2) : mix(ma.PI/2) : * (0.5), * (0.5) : procLeft, procRight : si.bus(2)
+with{	 
+    // stereo input mix
+    mix(theta) = si.bus(2) &lt;: (*(c), *(-s), *(s), *(c)) : (+, +) : si.bus(2)
+	with {
+		c = cos(theta);
+		s = sin(theta);
+	};
+
+    // import prime numbers
+    primes = component("prime_numbers.dsp").primes;
+    // calculation of left and right indexes
+    ind_left(i)  = 100 + 10 * pow(2, i) : int;
+    ind_right(i) = 100 + 11 * pow(2, i) : int;
+
+    // allpass single section
+    section((n1, n2)) = apf(n1, - apfG) : apf(n2, - apfG) : _ @ int(0.75 * (n1 + n2));
+
+    // chain and ring functions
+    allpass_chain(((n1, n2), ns), x) = _ : section((n1, n2)) &lt;: R(x, ns), _
+    with {
+    	R(x, ((n1, n2), ns)) = _,x : + : section((n1, n2)) &lt;: R(x, ns), _;
+    	R(x, (n1, n2)) = _,x : + : section((n1, n2));
+    };
+    procMono(feedfwd_delays, feedback_delays, feedback_gain, x) = x :
+    (+ : allpass_chain(feedfwd_delays, x)) ~ (_,x : + : section(feedback_delays) :
+    *(feedback_gain)) :&gt; _;
+    // left reverb
+	feedfwd_delays_left = par(i, 5, (ba.take((ind_left(i)), primes), ba.take((ind_left(i+1)), primes)));
+	feedback_delays_left = (ba.take(100, primes), ba.take(101, primes));
+	procLeft = procMono(feedfwd_delays_left, feedback_delays_left, krt);
+	// right reverb
+	feedfwd_delays_right = par(i, 4, (ba.take((ind_right(i)), primes), ba.take((ind_right(i+1)), primes)));
+	feedback_delays_right = (ba.take(97, primes), ba.take(99, primes));
+	procRight = procMono(feedfwd_delays_right, feedback_delays_right, krt);
+};
+process = ck_kbVerb(0.7, 0.5);
+</code></pre>
+
+<h3 id="james-dattorro-and-the-lexicon-480l-topology-a-landmark-in-reverb-design">James Dattorro and the Lexicon 480L Topology: A Landmark in Reverb Design</h3>
+
+<p>In his groundbreaking paper published in the Journal of the Audio Engineering Society, Vol. 45, No. 9, September 1997, James Dattorro opened up the design secrets behind the allpass loop reverbs, offering detailed insights into a reverb architecture that would shape the future of digital reverb technology.
+Whereas earlier papers, such as Gardner’s, hinted at concepts that had been circulating privately within the music technology industry, Dattorro’s paper fully exposed the inner workings of allpass loop reverbs. He introduced a specific allpass loop reverb in great detail, including all the delay lengths and coefficients, which he described as being “in the style of [Lexicon’s] Griesinger.” This paper effectively served as a Rosetta Stone for reverb design, offering a clear and practical understanding of the mechanisms that drive reverb effects. Many modern reverb plugins and built-in synth reverbs have directly recreated the “Dattorro” reverb, underscoring the paper’s enduring influence in the field.
+One of the paper’s key contributions was Dattorro’s exploration of the single loop feedback system, which was central to the Lexicon 480L’s reverb design. This architecture, which Dattorro helped reveal, is simpler yet more effective in simulating natural reverbs, providing dense and realistic sound with minimal complexity. The Lexicon 480L’s feedback structure, initially shrouded in secrecy, was described in Dattorro’s work with full transparency, as the company had granted him permission to detail their proprietary system. This was a crucial moment in the advancement of reverb design, as it opened up new possibilities for digital reverberation.</p>
+
+<pre><code class="language-faust">greisingerReverb(decay, damp) = (si.bus(2) :&gt; _ * (1 / 2) : predelay : op(damp) : apfsec) &lt;: si.bus(2) : (ro.interleave(2, 2) : (par(i, 2, (_, _) :&gt; + : loopsec(i)) : ro.crossNM(4, 1), si.bus(3))) ~ si.bus(2) : (si.block(2), si.bus(6)) : routing
+with{
+    predelay = _ @ msasamps(30);
+
+    apfsec = apf(msasamps(4.771), 0.75) : apf(msasamps(3.595), 0.75) :
+        apf(msasamps(12.73), 0.625) : apf(msasamps(9.307), 0.625);
+
+    loopsec(0) = apfMod(os.osc(0.10), msasamps(30.51), msasamps(4), 0.7) :
+        _ @ msasamps(141.69) : (_ &lt;: _, _) : (op(damp), _) :
+        (apf(msasamps(89.24), 0.5) &lt;: _, _), _ :
+        (_ @ (msasamps(106.28) - 1) &lt;: _, mem), _, _ :  
+        (_ * decay, _, _, _) : (_, ro.cross(3));
+
+    loopsec(1) = apfMod(os.osc(0.07), msasamps(22.58), msasamps(4), 0.7) :
+        _ @ msasamps(149.62) : (_ &lt;: _, _) : (op(damp), _) :
+        (apf(msasamps(60.48), 0.5) &lt;: _, _), _ :
+        (_ @ (msasamps(125.00) - 1) &lt;: _, mem), _, _ :  
+        (_ * decay, _, _, _) : (_, ro.cross(3));
+
+    routing(dA0, ap0, dB0, dA1, ap1, dB1) =
+        ((dA0 @ msasamps(8.90), dA0 @ msasamps(99.8), ap0 @ msasamps(64.2), dB0 @ msasamps(67),
+          dA1 @ msasamps(66.8), ap1 @ msasamps(6.3), dB1 @ msasamps(35.8),  0) :&gt; +),
+        ((dA0 @ msasamps(70.8), ap0 @ msasamps(11.2), dB0 @ msasamps(4.1), dA1 @ msasamps(11.8),
+          dA1 @ msasamps(121.7), ap1 @ msasamps(41.2), dB1 @ msasamps(89.7), 0) :&gt; +);
+};
+process = greisingerReverb(0.8, 0.4);
+</code></pre>
+<h2 id="references">References</h2>
+
+<ul>
+  <li>Manfred Schroeder, “Natural Sounding Artificial Reverb,” 1962.</li>
+  <li>Michael Gerzon, “Synthetic Stereo Reverberation,” 1971.</li>
+  <li>James (Andy) Moorer, “About This Reverberation Business,” 1979</li>
+  <li>Christopher Moore, “Time-Modulated Delay System and Improved Reverberation Using Same,” 1979.</li>
+  <li>John Stautner and Miller Puckette, “Designing Multichannel Reverberators,” 1982.</li>
+  <li>Jon Dattorro, “Effect Design - Part 1: Reverberator and Other Filters,” 1997.</li>
+  <li>Jean-Marc Jot, “Efficient models for reverberation and distance rendering in computer music and virtual audio reality,” 1997.</li>
+  <li>D. Rochesso, “Reverberation,” DAFX - Digital Audio Effects, Udo Zölzer, 2002.</li>
+</ul>
+
+<h2 id="topologies">Topologies</h2>
+
+<ul>
+  <li>Manfred Schroeder propone l’applicazione di una rete di allpass e comb filters.</li>
+  <li>James Moorer implementa un filtro lowpass all’interno della retroazione dei comb.</li>
+  <li>Christopher Moore propone linee di ritardo modulate nel tempo e uscite Multi-tap da modelli delle early relfection.</li>
+  <li>William Martens e Gary Kendall propongono delle early reflection spazializzate.</li>
+  <li>Michael Gerzon, John Stautner &amp; Miller Puckette propongono le Feedback Delay Network (mixer a matrice per i feedback).</li>
+  <li>David Griesinger propone un singolo Loop di Feedback utilizzando ritardi e filtri allpass.</li>
+</ul>
+
+<h1 id="main-references">Main References</h1>
+
+<p>Introduction to Digital Filters:
+With Audio Applications.
+books by Julius O. Smith III.
+Links to the series by Smith:</p>
+
+<ul>
+  <li>Mathematics of the Discrete Fourier Transform (DFT)</li>
+  <li>Introduction to Digital Filters</li>
+  <li>Physical Audio Signal Processing</li>
+  <li>Spectral Audio Signal Processing
+CCRMA by J.Smith https://ccrma.stanford.edu/~jos/fp/ su DSP Related <a href="https://www.dsprelated.com/freebooks.php">Free DSP Books</a></li>
+</ul>
+
+<p>TOM ERBE - UC SAN DIEGO - REVERB TOPOLOGIES AND DESIGN http://tre.ucsd.edu/wordpress/wp-content/uploads/2018/10/reverbtopo.pdf</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>ARTIFICIAL REVERBERATION: su DSPRELATED [Artificial Reverberation</td>
+      <td>Physical Audio Signal Processing](https://www.dsprelated.com/freebooks/pasp/Artificial_Reverberation.html)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Corey Kereliuk - Building a Reverb Plugin in Faust
+Keith Barr’s reverb architecture <a href="https://web.archive.org/web/20210111064016/http://blog.reverberate.ca/post/faust-reverb/">Building a Reverb Plugin in Faust</a></p>
+
+<p>Spin Semiconductor DSP Basics <a href="http://www.spinsemi.com/knowledge_base/dsp_basics.html">Spin Semiconductor - DSP Basics</a> Spin Semiconductor Audio Effects <a href="http://www.spinsemi.com/knowledge_base/effects.html#Reverberation">Spin Semiconductor - Effects</a></p>
+
+<p>freeverb3vst - Reverb Algorithms Tips http://freeverb3vst.osdn.jp/tips/reverb.shtml</p>
+
+<p>History of allpass loop / “ring” reverbs <a href="http://www.spinsemi.com/forum/viewtopic.php?p=555&amp;sid=5d31391b3883f1b9e013d5af80805019">History of allpass loop / "ring" reverbs? - Spin Semiconductor</a></p>
+
+<p>Musical Applications of Microprocessors (The Hayden microcomputer series) http://sites.music.columbia.edu/cmc/courses/g6610/fall2016/week8/Musical_Applications_of_Microprocessors-Charmberlin.pdf</p>
+
+<p>Acustica_Riverbero - Alfredo Ardia <a href="http://appuntimusicaelettronica.blogspot.com/2012/10/acusticariverbero.html">Appunti: acustica_Riverbero</a></p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>Algorithmic Reverbs: The Moorer Design [Algorithmic Reverbs: The Moorer Design</td>
+      <td>flyingSand](https://christianfloisand.wordpress.com/2012/10/18/algorithmic-reverbs-the-moorer-design/)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Dattorro Convex Optimization of a Reverberator <a href="https://www.convexoptimization.com/wikimization/index.php/Dattorro_Convex_Optimization_of_a_Reverberator">Dattorro Convex Optimization of a Reverberator - Wikimization</a></p>
+
+<p>primes under 10.000 https://www.matematika.it/public/allegati/34/Numeri_primi_minori_di_10000_1_3.pdf</p>]]></content><author><name></name></author><category term="jekyll" /><category term="update" /><summary type="html"><![CDATA[Digital reverberation is a continually relevant and widely discussed topic in the realms of computer music and Digital Signal Processing, as well as electroacoustic music in general. Its applications and studies have involved both commercial and academic sectors. Consequently, over time, a complex history has developed, characterized by numerous ramifications and implications, leading to a proliferation of various methods and implementation topologies. In this study, we will delve into the subject in detail, examining the main existing implementations.]]></summary></entry><entry><title type="html">Exploring Pseudo-Random and Stochastic Signals in Digital Sound Synthesis</title><link href="http://localhost:4000/jekyll/update/2025/03/04/Exploring-Pseudo-Random.html" rel="alternate" type="text/html" title="Exploring Pseudo-Random and Stochastic Signals in Digital Sound Synthesis" /><published>2025-03-04T17:10:18+01:00</published><updated>2025-03-04T17:10:18+01:00</updated><id>http://localhost:4000/jekyll/update/2025/03/04/Exploring-Pseudo-Random</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2025/03/04/Exploring-Pseudo-Random.html"><![CDATA[<p>Random and stochastic signals in synthesis can be useful for implementing time-varying oscillators and/or control signals. A common issue in digital synthesizers and audio effects is that the sounds often differ significantly from those produced in the physical world, due to the precise, time-invariant nature of signal generation in the digital domain.</p>
+
+<p>In computers, time-varying details that occur unpredictably in the physics of sound must be carefully sequenced, often to the point of exhausting the resources of the computer (and the programmer).</p>
+
+<p>This problem has existed since the early days of computer music. Indeed, we can think of the first examples of research in this field, such as those conducted by Max Mathews and his colleagues at Bell Labs, who studied the possibilities of sound control using nonlinear signals and algorithms in the early <strong>MUSIC-N</strong> family synthesis languages. Some examples include low-frequency noise generators such as <strong>RAN</strong> and <strong>RAH</strong>, which generate pseudo-random signals for controlling sound parameters like frequency, amplitude, etc.</p>
+
+<p>Using nonlinear signals in sound synthesis and control can thus be an effective way to generate sounds that are closer to natural ones compared to those generated through more standard digital synthesis techniques, using more computationally efficient methods. Here, I will implement circuits in the <strong>Faust</strong> programming language (<strong>GRAME</strong>) to discretely represent some pseudo-random and stochastic models useful for generating control signals.</p>
+
+<h2 id="white-noise-generator">White Noise Generator</h2>
+
+<p>The first fundamental building block for working with random numbers is the pseudo-random number generator, also known in the Digital Signal Processing (<strong>DSP</strong>) domain as digital white noise. When a random stream of numbers is generated and reproduced at the sample level, the resulting sound is typical of white noise. White noise generators have been used in the field of computer music since its beginning. We can trace their utilization back to even <strong>Max Mathew’s 1963</strong> article <strong>The Digital Computer as a Musical Instrument</strong>, the first known paper on computer music.</p>
+
+<p>In general, a random number generator provides an N-bit binary number every time it is called. If these conditions are truly met, each bit or any subset of the bits in the numbers should also be random. However, no algorithmic random number generator completely meets all of these criteria. In fact, most random number generation algorithms are numerical functions that accept their previous output as input and generate a new output.</p>
+
+<p>The initial input used when the generator is started is called the <em>seed</em>, and it can usually be any number except zero. If the same seed number is used on two different occasions, the series of numbers generated will also be the same.</p>
+
+<p><u>Since the output numbers are integers with a finite number of bits, it is obvious that at some point in the sequence the seed will appear again</u>. <u>From this point forward, the sequence repeats itself.</u></p>
+
+<p>An efficient random number generator will generate all or nearly all of the 2N different numbers that can be represented by an N-bit word before repeating.</p>
+
+<h2 id="linear-congruential-generator">Linear Congruential Generator</h2>
+
+<p>One of the most popular random number algorithms is the linear congruential method. The first model is attributed to the Lehmer random number generator (named after <strong>D. H. Lehmer</strong>), sometimes also referred to as the <em>Park-Miller random number generator</em> (after <strong>Stephen K. Park</strong> and <strong>Keith W. Miller</strong>). This is a type of linear congruential generator (LCG) that operates in the multiplicative group of integers modulo N.</p>
+
+<p>The basic function is: \(R_{\text{new}} = (A \times R_{\text{old}} + C) \mod M\)
+where <strong>A</strong> and <strong>C</strong> are carefully chosen constants, and <strong>M</strong> is the largest possible number plus one for the chosen word length. The generator is completely specified by giving values for <strong>A</strong>, <strong>C</strong>, and the word length. For any given word length, there are values for <strong>A</strong> and <strong>C</strong> (besides the trivial ones, A = 1 and C = 1) that will give M values before repeating.</p>
+
+<p>In Faust, a typical linear congruential generator following this method can be written as follows:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>import("stdfaust.lib");
+
+// Pseudo-random noise with linear congruential generator (LCG)
+noise(initSeed) = lcg ~ _ : (_ / m)
+with{
+ a = 18446744073709551557; c = 12345; m = 2 ^ 31;
+lcg(seed) = ((a * seed + c) + (initSeed - initSeed') % m);
+};
+process = noise(1212);
+</code></pre></div></div>
+
+<p>This algorithm will generate a new random value on every sample, corresponding to the sample rate of the system.</p>
+
+<p>How the <code class="language-plaintext highlighter-rouge">LCG</code> Works:</p>
+
+<p><strong>Initialization</strong>:</p>
+
+<p>   - The generator starts with an initial seed (<code class="language-plaintext highlighter-rouge">initSeed</code>) that serves as the starting value for the sequence. The quality of randomness depends heavily on this seed.</p>
+
+<p><strong>Recurrence Relation</strong>:</p>
+
+<p>   - The generator calculates each new random value in <code class="language-plaintext highlighter-rouge">seed</code></p>
+
+<p>   - Here:</p>
+
+<p>     - <strong><code class="language-plaintext highlighter-rouge">A</code></strong>: Is the multiplier.</p>
+
+<p>     - <strong><code class="language-plaintext highlighter-rouge">C</code></strong>: Is the increment.</p>
+
+<p>     - <strong><code class="language-plaintext highlighter-rouge">M</code></strong>: Is the modulus, which determines the range of possible output values.</p>
+
+<p><strong>Feedback</strong>:</p>
+
+<p>   - The output of the <code class="language-plaintext highlighter-rouge">lcg</code> function is fed back into itself through the feedback operator (<code class="language-plaintext highlighter-rouge">~</code> in FAUST), allowing it to generate a sequence of pseudo-random numbers.</p>
+
+<p><strong>Scaling</strong>:</p>
+
+<p>   - The result is divided by <code class="language-plaintext highlighter-rouge">M</code> (<code class="language-plaintext highlighter-rouge">_ / m</code>) to normalize the output to the range [0, 1].</p>
+
+<p><strong>Constants in the Code</strong>:</p>
+
+<p>   - <strong><code class="language-plaintext highlighter-rouge">a</code></strong>: A large, carefully chosen multiplier to ensure good randomness.</p>
+
+<p>   - <strong><code class="language-plaintext highlighter-rouge">c</code></strong>: A small constant increment, often chosen to avoid patterns in the generated numbers.</p>
+
+<p>   - <strong><code class="language-plaintext highlighter-rouge">m</code></strong>: The modulus, chosen as a power of two (here, \(2^{31}\)), which is common for computational efficiency.</p>
+
+<p><strong>Multiple Outputs</strong></p>
+
+<p>It is also possible to generate multiple outputs from the same linear congruential generator by adding an internal sequential operation <code class="language-plaintext highlighter-rouge">seqN</code> that repeats the <code class="language-plaintext highlighter-rouge">LCG</code> process in series and takes multiple taps. Here’s an example of how you can create multiple outputs:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>import("stdfaust.lib");
+
+// Noise - Linear Congruential Generator - Multiple Outputs
+multinoise(N, initSeed) = ((_ + (initSeed - initSeed') :
+    seqN(N, (_ * a + c) % m )) ~ _ : par(i, N, _ / m))
+with{
+    // LCG constants
+    a = 18446744073709551557; c = 12345; m = 2 ^ 31;
+    // Sequential operations
+    seqN(N, OP) = _ &lt;: seq(i, N, (OP &lt;: _, _),
+        si.bus(i + 1)) : (_, !, si.bus(N - 1), !);
+};
+process = multinoise(4, 1212);
+</code></pre></div></div>
+
+<h2 id="low-frequency-noise-generator">Low frequency Noise Generator</h2>
+
+<p>Since in Faust every function runs at the single sample level, our linear congruential generator will generate a new number at every sample. For this reason, if we want to use a noise generator as a low-frequency oscillator for control signals, we need to hold the values at slower rate intervals.</p>
+
+<p>For this purpose, the first thing we need to do is build a sample-and-hold module that can hold a signal when triggered.</p>
+
+<p>In Faust, we can write a sample-and-hold function as follows:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>import("stdfaust.lib");
+
+// a classic sample and hold
+sah(x, t) = selector(t, _, x) ~ _
+with{
+    // binary selector
+    selector(sel, x, y) = x * (1 - sel) + y * (sel);
+};
+</code></pre></div></div>
+
+<p>How <code class="language-plaintext highlighter-rouge">sah</code> Works:</p>
+
+<p><strong>Initial State</strong>:</p>
+
+<ul>
+  <li>The feedback loop (<code class="language-plaintext highlighter-rouge">~ _</code>) initializes the memory (<code class="language-plaintext highlighter-rouge">_</code>) to zero (or undefined, depending on implementation).</li>
+</ul>
+
+<p><strong>Sampling</strong>:</p>
+
+<ul>
+  <li>When <code class="language-plaintext highlighter-rouge">t</code> (the trigger signal) becomes <code class="language-plaintext highlighter-rouge">1</code>, the <code class="language-plaintext highlighter-rouge">selector</code> picks the value of <code class="language-plaintext highlighter-rouge">x</code> (the input signal) and stores it in the feedback loop (<code class="language-plaintext highlighter-rouge">_</code>).</li>
+</ul>
+
+<p><strong>Holding</strong>:</p>
+
+<ul>
+  <li>When <code class="language-plaintext highlighter-rouge">t</code> is <code class="language-plaintext highlighter-rouge">0</code>, the <code class="language-plaintext highlighter-rouge">selector</code> picks the previously stored value from <code class="language-plaintext highlighter-rouge">_</code>, effectively holding the last sampled value.</li>
+</ul>
+
+<p>The feedback (<code class="language-plaintext highlighter-rouge">~</code>) allows the output to retain and “remember” the last sampled value. Without it, the function would only output the input directly without holding any value.</p>
+
+<p>Now that we have our SAH module, we need a <em>clock function</em> that can generate triggers at regular intervals. For this purpose, we need triggers that last only one sample. In fact, if we use this sample and hold function with a bandwidth larger than a single sample, the gate of the input signal will remain open depending on the duration of the band before the output is stored in our feedback circuit.</p>
+
+<p>We can write a single-sample trigger as follows:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>import("stdfaust.lib");
+
+// Synchronous pulse train in HZ
+metro(ms) = phasor0(1000 / max(1, ms)) : derivate + dirac
+with{
+    // phasor that start from 0
+    phasor0(f) = (_ &lt;: _ + f, _) ~ _ % ma.SR : (!, _ / ma.SR);
+    // Dirac Impulse at Compile Time
+    dirac = 1 - (1 : mem);
+    // first derivate
+    derivate(x) = x &lt; x';
+};
+process = metro(100);
+</code></pre></div></div>
+
+<p>How the Synchronous Pulse Train (<code class="language-plaintext highlighter-rouge">metro</code>) Works:</p>
+
+<p>The <code class="language-plaintext highlighter-rouge">metro</code> function generates a pulse train with a specified frequency (given in milliseconds).</p>
+
+<p><strong>Main Function</strong>:</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">metro(ms)</code> takes an input in milliseconds (ms) to define the pulse interval.</li>
+  <li>It converts the interval in milliseconds to a frequency in Hz using: <code class="language-plaintext highlighter-rouge">1000 / max(1, ms)</code> This ensures the frequency is always positive and at least 1 ms, avoiding divisions by 0.</li>
+</ul>
+
+<p><strong>Phasor Generation</strong>:</p>
+
+<p><code class="language-plaintext highlighter-rouge">phasor0(f) = (_ &lt;: _ + f, _) ~ _ % ma.SR : (!, _ / ma.SR);</code></p>
+
+<p>Creates a repeating ramp signal (phasor) that oscillates between 0 and 1.</p>
+
+<p>• <code class="language-plaintext highlighter-rouge">_ &lt;: _ + f</code> Increments the current phase value by f (frequency).</p>
+
+<p>• <code class="language-plaintext highlighter-rouge">~ _</code> Uses feedback to store the current phase value across iterations.</p>
+
+<p>• <code class="language-plaintext highlighter-rouge">% ma.SR</code> Resets the phase to 0 when it reaches the <em>Sample Rate</em>, creating a looping behavior.</p>
+
+<p>• <code class="language-plaintext highlighter-rouge">_ / ma.SR</code> Normalizes the ramp signal to a range of [0, 1] dividing the output by <em>Sample Rate</em>.</p>
+
+<p><strong>Derivative Detection:</strong></p>
+
+<p><code class="language-plaintext highlighter-rouge">derivate(x) = x &lt; x';</code> Detects when the phasor value resets to 0 by comparing the current value (x) with its previous value at 1 sample delay \(Z^{-1}\) = <code class="language-plaintext highlighter-rouge">'</code>.</p>
+
+<p><strong>Dirac Impulse:</strong></p>
+
+<p><code class="language-plaintext highlighter-rouge">dirac = 1 - (1 : mem);</code> (<code class="language-plaintext highlighter-rouge">mem</code> and <code class="language-plaintext highlighter-rouge">'</code> are the same) Generates a single impulse at compile time, ensuring an initial pulse is present.</p>
+
+<p>The pulse train is generated by combining the output of the derivative (derivate) with the Dirac impulse: <code class="language-plaintext highlighter-rouge">metro(ms) = phasor0(1000 / max(1, ms)) : derivate + dirac;</code></p>
+
+<p><strong>where</strong>:</p>
+
+<p>• phasor0 creates the ramp signal.</p>
+
+<p>• derivate detects when the ramp resets.</p>
+
+<p>• dirac ensures an initial pulse is present.</p>
+
+<p>• The combination produces a series of synchronized 1 sample pulses.</p>
+
+<p>Now that our modules are complete, we can connect them together to sample the noise input at a low sampling rate, building the low-frequency noise generator as follows:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>process = noise(1212), metro(100) : sah;
+</code></pre></div></div>
+
+<p>Or by putting everything together in a single function:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>import("stdfaust.lib");
+
+// noise sampled with a classic sample and hold
+sahNoise(seed, f) = selector(pulseTrain, _, noise(seed)) ~ _
+with{
+    // Pseudo-random noise with linear congruential generator (LCG)
+    noise(initSeed) = lcg ~ _ : (_ / m)
+    with{
+        a = 18446744073709551557; c = 12345; m = 2 ^ 31;
+        lcg(seed) = ((a * seed + c) + (initSeed - initSeed') % m);
+    };
+    // binary selector
+    selector(sel, x, y) = x * (1 - sel) + y * (sel);
+    // Dirac Impulse at Compile Time
+    dirac = 1 - (1 : mem);
+    derivate(x) = x &lt; x';
+    phasor0 = (_ &lt;: _ + f, _) ~  _ % ma.SR : (!, _ / ma.SR);
+    pulseTrain = phasor0 : derivate + dirac;
+};
+process = sahNoise(1212, 100);
+</code></pre></div></div>
+
+<p>This will sample random values every 100 milliseconds.</p>
+
+<p>If we decide to use the same code and trigger the SAH manually,
+we obtain a random number generator.</p>
+
+<p>A new random number is generated each time the user clicks the GUI button.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>import("stdfaust.lib");
+
+// random number generator
+random(range, seed, trigger) = ((noise(seed) : abs), dirac(trigger)) :
+    sah * range
+with{
+    // transform a constant to 1 sample trigger
+    dirac(x) = (x - x') &gt; 0;
+    // Pseudo-random noise with linear congruential generator (LCG)
+    noise(initSeed) = lcg ~ _ : (_ / m)
+    with{
+        a = 18446744073709551557; c = 12345; m = 2 ^ 31;
+        lcg(seed) = ((a * seed + c) + (initSeed - initSeed') % m);
+    };  
+    // a classic sample and hold
+    sah(x, t) = selector(t, _, x) ~ _
+    with{
+        // binary selector
+        selector(sel, x, y) = x * (1 - sel) + y * (sel);
+    };
+};
+process = random(100, 1212, button("trigger"));
+</code></pre></div></div>
+
+<p>where <code class="language-plaintext highlighter-rouge">abs</code> ensures only positive values by applying the absolute value, <code class="language-plaintext highlighter-rouge">range</code> is a multiplication factor that determines the output range, extending it beyond [0, 1] to [0, <code class="language-plaintext highlighter-rouge">range</code>], and <code class="language-plaintext highlighter-rouge">dirac(x) = (x - x') &gt; 0;</code> transforms a signal with a bandwidth larger than a single sample into a single-sample impulse.</p>
+
+<h2 id="asynchronous-low-frequency-noise-generator">Asynchronous Low frequency Noise Generator</h2>
+
+<p>We now have a low frequency noise generator, but the values are output at a synchronous clock rate. This means that while the sequence of values is unpredictable, the timing of updates remains consistent.</p>
+
+<p>If we want to make our noise generator more complex, we can apply the principles we’ve learned so far to create an asynchronous clock for our low-frequency noise by mixing these elements together.</p>
+
+<p>What we aim to achieve now is the generation of a clock with asynchronous timing, so that the output values from the sample and hold can change at unpredictable moments.</p>
+
+<p>The following Faust code implements a <em>random impulse generator</em>, where the impulses occur at irregular intervals based on a pseudo-random number generator. The intervals are constrained to a range between <code class="language-plaintext highlighter-rouge">ms1</code> and <code class="language-plaintext highlighter-rouge">ms2</code>, specified in milliseconds.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// random impulse generator / ms1 &amp; ms2 = range
+randometro(seed, ms1, ms2) = randomtrigger
+with{
+    // Pseudo-random noise with linear congruential generator (LCG)
+    noise(initSeed) = lcg ~ _ : (_ / m)
+    with{
+        a = 18446744073709551557; c = 12345; m = 2 ^ 31;
+        lcg(seed) = ((a * seed + c) + (initSeed - initSeed') % m);
+    };
+    // Dirac Impulse at Compile Time
+    dirac = 1 - (1 : mem);
+    derivate(x) = x &lt; x';
+    phasor0(f) = (_ &lt;: _ + f, _) ~  _ % ma.SR : (!, _ / ma.SR);
+    pulseTrain(f) = phasor0(f) : derivate;
+    // a classic sample and hold
+    sah(t, x) = selector(t, _, x) ~ _
+    with{
+        // binary selector
+        selector(sel, x, y) = x * (1 - sel) + y * (sel);
+    };
+    msMin = min((1000 / max(1, ms1)), (1000 / max(1, ms2)));
+    msMax = max((1000 / max(1, ms1)), (1000 / max(1, ms2)));
+    randomtrigger = ((_ + dirac), abs(noise(seed)) * (msMax - msMin) + msMin :
+        sah : pulseTrain) ~ _;
+};
+//process = randometro(1212, 100, 4000), randometro(1234, 100, 4000);
+</code></pre></div></div>
+
+<p>The function <code class="language-plaintext highlighter-rouge">randometro(seed, ms1, ms2)</code> takes as its input a seed value for the LCG and <em>ms1, ms2</em> as the bounds of the random interval range, given in milliseconds.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>msMin = min((1000 / max(1, ms1)), (1000 / max(1, ms2)));
+msMax = max((1000 / max(1, ms1)), (1000 / max(1, ms2)));
+</code></pre></div></div>
+
+<p>This converts the input intervals <em>ms1</em> and <em>ms2</em> (in milliseconds) into corresponding frequencies in Hz.</p>
+
+<p>The variables <code class="language-plaintext highlighter-rouge">msMin</code> and<code class="language-plaintext highlighter-rouge">msMax</code> represent the lower and upper bounds, ensuring consistent interval limits derived from <em>ms1</em> and <em>ms2</em>.</p>
+
+<p>Beyond the functions we have already discussed, the core of the random impulse train is defined as:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>randomtrigger = ((_ + dirac), abs(noise(seed)) * (msMax - msMin) + msMin :
+    sah : pulseTrain) ~ _;
+</code></pre></div></div>
+
+<p>The function generates a random interval using <code class="language-plaintext highlighter-rouge">noise(seed)</code>, scaled to the range <code class="language-plaintext highlighter-rouge">[msMin, msMax]</code>.</p>
+
+<p>Here, <code class="language-plaintext highlighter-rouge">msMin</code> serves as the base frequency offset, while <code class="language-plaintext highlighter-rouge">msMax</code> scales the seed to adjust the range of the output values. The term <code class="language-plaintext highlighter-rouge">(msMax - msMin)</code> ensures the maximum range does not exceed the intended limit, as <code class="language-plaintext highlighter-rouge">msMin</code> is added as a base <em>offset</em>.</p>
+
+<p>Next, the <code class="language-plaintext highlighter-rouge">sah</code> function is used to sample and hold the random value, ensuring it remains constant during the specified interval.</p>
+
+<p>Finally, the <code class="language-plaintext highlighter-rouge">pulseTrain</code> function takes the random value as its frequency, varying it over time based on the newly generated random number. This output is fed back into the <code class="language-plaintext highlighter-rouge">sah</code> function, which triggers the next random value and consequently alters the frequency, creating a dynamic and unpredictable sequence.</p>
+
+<p>We now have a <em>random impulse generator</em> that we can use as a clock source for the low-frequency noise generator, making it operate at asynchronous time intervals. This can be used as a non-linear control signal.</p>
+
+<p>Below is the complete code that brings it all together:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>import("stdfaust.lib");
+
+// SAH noise at random intervals / ms1 &amp; ms2 = range
+sahNoiserandom(seed, ms1, ms2) = selector(randometro, _, noise(seed)) ~ _
+with{
+    // Pseudo-random noise with linear congruential generator (LCG)
+    noise(initSeed) = lcg ~ _ : (_ / m)
+    with{
+        a = 18446744073709551557; c = 12345; m = 2 ^ 31;
+        lcg(seed) = ((a * seed + c) + (initSeed - initSeed') % m);
+    };
+    // binary selector
+    selector(sel, x, y) = x * (1 - sel) + y * (sel);
+    // random impulse generator / ms1 &amp; ms2 = range
+    randometro = randomtrigger
+    with{
+        // Dirac Impulse at Compile Time
+        dirac = 1 - (1 : mem);
+        derivate(x) = x &lt; x';
+        phasor0(f) = (_ &lt;: _ + f, _) ~  _ % ma.SR : (!, _ / ma.SR);
+        pulseTrain(f) = phasor0(f) : derivate;
+        // a classic sample and hold
+        sah(t, x) = selector(t, _, x) ~ _
+        with{
+            // binary selector
+            selector(sel, x, y) = x * (1 - sel) + y * (sel);
+        };
+        msMin = min((1000 / max(1, ms1)), (1000 / max(1, ms2)));
+        msMax = max((1000 / max(1, ms1)), (1000 / max(1, ms2)));
+        randomtrigger = ((_ + dirac), abs(noise(seed * 2)) * (msMax - msMin) +
+            msMin : sah : pulseTrain) ~ _;
+    };
+};
+process = sahNoiserandom(1212, 100, 4000);
+</code></pre></div></div>
+
+<h2 id="stochastic-signals">Stochastic Signals</h2>
+
+<p>In Digital Signal Processing (<strong>DSP</strong>), the concept of stochastic processes is often used to describe signals that evolve unpredictably over time. While <strong>random signals</strong> (such as <strong>noise</strong>) can be unpredictable, stochastic processes are defined by <strong>probabilistic models</strong> that describe the likelihood of different outcomes, making their behavior dynamic but not entirely predetermined.</p>
+
+<p>For example, <strong>random walks</strong> and <strong>Brownian motion</strong> are both types of stochastic processes commonly used to model natural, physical randomness, and they lead to outputs that feel more connected to real-world phenomena.</p>
+
+<p>Stochastic processes are useful in applications where randomness and gradual changes are required, such as in <strong>Brownian motion</strong>, <strong>fractal-based noise</strong>, and <strong>Markov chains</strong>. These processes introduce correlations between successive values, which is particularly useful for modeling behaviors that evolve smoothly rather than in abrupt, discontinuous jumps.</p>
+
+<p>A <strong>stochastic process</strong> in fact refers to a <em>system</em> that is <strong>nondeterministic</strong> or <strong>unpredictable</strong>. It evolves in a way that can’t be precisely predicted, though it is governed by probabilistic rules. These processes are defined by their <strong>probabilistic models</strong>, which describe the likelihood of various outcomes over time, making them dynamic with behavior that is not predetermined.</p>
+
+<p>On the other hand, <strong>random</strong> typically refers to something that is <strong>unrecognizable</strong> or <strong>not following any identifiable pattern</strong>. Random signals evolve in time in an unpredictable manner, and their individual values cannot be predicted with certainty. However as we observe with <strong>pseudo-random generators</strong>, the <strong>average properties</strong> of random signals are deterministic. Since total unpredictability cannot be computed, the terms “stochastic” and “random” can sometimes be used interchangeably.</p>
+
+<h4 id="a-case-of-study-of-the-random-walk--the-drunk-object-from-max-msp">A case of study of the Random Walk : the Drunk object from Max Msp</h4>
+
+<p>One of the simplest stochastic processes is the <em>random walk</em>, a term first introduced by Karl Pearson in 1905. The random walk is the formalization of the idea of taking successive steps in random directions, and it is the simplest Markov process, whose most well-known mathematical representation is the Norbert Wiener process. A Wiener process, also known as Brownian motion, is a Gaussian stochastic process in continuous time with independent increments. It is used to model Brownian motion itself as well as various random phenomena observed in applied mathematics, finance, and physics.</p>
+
+<p>The term “Brownian motion” specifically refers to the erratic motion of particles small enough (with diameters on the order of a micrometer) to be unaffected by gravity, present in fluids or gaseous suspensions (such as smoke), and observable under a microscope. The phenomenon was discovered in the early 19th century by the Scottish botanist Robert Brown and was later modeled in 1905 by the German theoretical physicist Albert Einstein.</p>
+
+<p>In the <strong>Max MSP</strong> programming environment, an example of Brownian motion for control signals can be found in the object <em>drunk</em>.</p>
+
+<p>The <em>drunk walk model</em> is a stochastic process that nominally follows the path of a drunk person who has just left a bar. At each step, he randomly chooses to move either to the left or to the right, without knowing where he came from or where he is going. After the first step, his next move is chosen randomly, either left or right, and this pattern continues. In the mathematical model, the drunk never sobers up, and an interesting feature of this process is that the drunk tends to return to his starting point over time.</p>
+
+<p>I attempted and succeeded in porting this model to Faust.
+Below is the Faust code that implements the random walk process.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>import("stdfaust.lib");
+
+// random walk generator : variable steps and max value
+drunk(seed, maxvalue, stepsize, trigger) = noise(seed), (trigger : dirac) :
+    sah * (abs(stepsize) + 1) : int * (trigger : dirac) : + ~ _ :
+        foldInt(abs(maxvalue))
+with{
+    // transform a constant to 1 sample trigger
+    dirac(x) = (x - x') &gt; 0;
+    // pseudo-random noise with linear congruential generator (LCG)
+    noise(initSeed) = lcg ~ _ : (_ / m)
+    with{
+        a = 18446744073709551557; c = 12345; m = 2 ^ 31;
+        lcg(seed) = ((a * seed + c) + (initSeed - initSeed') % m);
+    };
+    // a classic sample and hold
+    sah(x, t) = selector(t, _, x) ~ _
+    with{
+        // binary selector
+        selector(sel, x, y) = x * (1 - sel) + y * (sel);
+    };
+    // fold at max Int value and 0
+    foldInt(maxv, x) = maxv - abs((abs(x) % (2 * maxv)) - maxv);
+};
+process = (os.phasor(1, 10) - 0.1 &lt; 0.0) : drunk(1212, 100, 10);
+</code></pre></div></div>
+
+<p>In this code, at every trigger input, the sample and hold noise provides an integer value between a base of 1 and a maximum value, similar to how we implement the random impulse generator. However, the key difference is that at each step, the value is held inside the integrator (<code class="language-plaintext highlighter-rouge">+ ~ _</code>), and at successive steps, a sum or difference is performed between the value stored in the integrator and the new value generated.</p>
+
+<p>To achieve this, we need to ensure that when a new number is generated by the <code class="language-plaintext highlighter-rouge">sah</code>, it lasts only one sample (<code class="language-plaintext highlighter-rouge">int * (trigger : dirac)</code>). If we don’t implement this, another operation will be automatically performed on the next sample, causing unintended results.</p>
+
+<p>Finally, the <code class="language-plaintext highlighter-rouge">foldInt</code> object: <code class="language-plaintext highlighter-rouge">foldInt(maxv, x) = maxv - abs((abs(x) % (2 * maxv)) - maxv);</code> ensures that only values within the range of maxvalue are output. If the range is exceeded, a <em>foldover</em> operation is performed on the signal, wrapping the value back into the defined range.</p>
+
+<p>An important aspect of creating time-varying control signals is to obtain a <em>smooth</em> transition between every sample. In fact, a random walk signal like the one generated by the <em>drunk</em> object, at the sample level in Faust, creates discontinuities in the signal. These discontinuities can lead to issues such as aliasing, or worse, an overall lack of definition in the behaviors used to control a carrier signal due to the poor temporal consistency of the signal.</p>
+
+<p>An alternative way to program a random walk in Faust in response to these problems could be simpler than this last one. By changing the direction of the signal at every sample, we can impose a condition on the noise generator to produce only binary values in the range of [-1, 1]. To avoid discontinuities, we can use integration techniques such as linear interpolation or filters to smooth the signal.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>randomWalk(seed, speed, smooth, trigger) = binaryNoise(seed) / ma.SR : + ~ _ : _ * speed : wavefolding : fi.lowpass(1, 1 / smooth)
+with{
+    // transform a constant to 1 sample trigger
+    dirac(x) = (x - x') &gt; 0;
+    // a classic sample and hold
+    sah(x, t) = selector(t, _, x) ~ _
+    with{
+        // binary selector
+        selector(sel, x, y) = x * (1 - sel) + y * (sel);
+    };
+    // pseudo-random binary noise with linear congruential generator (LCG)
+    binaryNoise(initSeed) = lcg ~ _ : (_ / m) : condition
+    with{
+        a = 18446744073709551557; c = 12345; m = 2 ^ 31;
+        lcg(seed) = ((a * seed + c) + (initSeed - initSeed') % m);
+        condition = _ &lt;: (_ &gt; 0.0) + (_ &lt;= 0.0) * - 1;
+    };
+    // WAVEFOLDING
+    wavefolding = intreset &lt;: trifunctionpos,trifunctionneg :&gt; + : _ * 2
+    with{
+        intreset(x)= x-int(x);
+        triconditionpos(x) = (x &lt;  0.5) * (x) + ((x &gt;  0.5) * ((x * -1) +1));
+        trifunctionpos(x) = (x &gt; 0) * (x) : triconditionpos;
+        triconditionneg(x) = (x &gt; -0.5) * (x) + ((x &lt; -0.5) * ((x * -1) -1));
+        trifunctionneg(x) = (x &lt; 0) * (x) : triconditionneg;
+    };
+};
+process = (os.phasor(1, 100) - 0.1 &lt; 0.0) : randomWalk(1212, 10, 2);
+</code></pre></div></div>
+
+<p>This last code is an example of how one can generate a non-linear, fully functioning control signal from a stochastic model like the random walk, or from other generators to obtain complex behaviors. We can address the resolution of this kind of problem by focusing on continuity, since from the <strong>RAN</strong> object in <strong>Music V</strong>. In his book on computer music (Mathews, <em>The Technology of Computer Music</em>), Max Mathews explains how, in the random number generator, he achieved a continuous function using linear interpolation methods.</p>
+
+<p>The calibration of non-linear signal processing is an art in itself, involving a range of functional models beyond the one described here. It requires studying and refining the response of control signals and is closely tied to the type of analysis and behavior a composer or programmer seeks to achieve in their algorithm. Given the importance of this topic, it will require further focus, which I will explore in more depth in future posts.</p>]]></content><author><name></name></author><category term="jekyll" /><category term="update" /><summary type="html"><![CDATA[Random and stochastic signals in synthesis can be useful for implementing time-varying oscillators and/or control signals. A common issue in digital synthesizers and audio effects is that the sounds often differ significantly from those produced in the physical world, due to the precise, time-invariant nature of signal generation in the digital domain.]]></summary></entry><entry><title type="html">Test</title><link href="http://localhost:4000/jekyll/update/2024/01/01/welcome-to-jekyll.html" rel="alternate" type="text/html" title="Test" /><published>2024-01-01T17:10:18+01:00</published><updated>2024-01-01T17:10:18+01:00</updated><id>http://localhost:4000/jekyll/update/2024/01/01/welcome-to-jekyll</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2024/01/01/welcome-to-jekyll.html"><![CDATA[<h1 id="faust-code-test">Faust Code Test</h1>
+
+<iframe id="faust-frame" src="/assets/faust/faust.html" style="width:100%; height:100%; border:none;"></iframe>
+
+<p>Jekyll also offers powerful support for code snippets:</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">def</span> <span class="nf">print_hi</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span>
+  <span class="nb">puts</span> <span class="s2">"Hi, </span><span class="si">#{</span><span class="nb">name</span><span class="si">}</span><span class="s2">"</span>
+<span class="k">end</span>
+<span class="n">print_hi</span><span class="p">(</span><span class="s1">'Tom'</span><span class="p">)</span>
+<span class="c1">#=&gt; prints 'Hi, Tom' to STDOUT.</span></code></pre></figure>
+
+<p>And Links</p>]]></content><author><name></name></author><category term="jekyll" /><category term="update" /><summary type="html"><![CDATA[Faust Code Test]]></summary></entry></feed>

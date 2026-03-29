@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; img-src 'self'; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; media-src 'self'; object-src 'self'; child-src 'self'; form-action 'none'; base-uri 'self'" />
+<meta http-equiv="X-XSS-Protection"  content="1;mode=block" always>
+<meta http-equiv="Referrer-Policy" content="no-referrer, strict-origin-when-cross-origin"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Sine oscillator approximations in FAUST</title><!-- Begin Jekyll SEO tag v2.8.0 -->
+<meta name="generator" content="Jekyll v4.3.4" />
+<meta property="og:title" content="Sine oscillator approximations in FAUST" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="While FAUST provides optimized wavetable-based oscillators (os.osc), understanding explicit mathematical approximations of sinusoidal functions remains valuable for several reasons: educational insight into DSP fundamentals, scenarios requiring zero memory overhead, and contexts where algorithmic synthesis is preferred over lookup tables." />
+<meta property="og:description" content="While FAUST provides optimized wavetable-based oscillators (os.osc), understanding explicit mathematical approximations of sinusoidal functions remains valuable for several reasons: educational insight into DSP fundamentals, scenarios requiring zero memory overhead, and contexts where algorithmic synthesis is preferred over lookup tables." />
+<link rel="canonical" href="http://localhost:4000/jekyll/update/2025/10/16/Sine-Osc-approximations-in-Faust.html" />
+<meta property="og:url" content="http://localhost:4000/jekyll/update/2025/10/16/Sine-Osc-approximations-in-Faust.html" />
+<meta property="og:site_name" content="Luca Spanedda" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2025-10-16T18:10:18+02:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Sine oscillator approximations in FAUST" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2025-10-16T18:10:18+02:00","datePublished":"2025-10-16T18:10:18+02:00","description":"While FAUST provides optimized wavetable-based oscillators (os.osc), understanding explicit mathematical approximations of sinusoidal functions remains valuable for several reasons: educational insight into DSP fundamentals, scenarios requiring zero memory overhead, and contexts where algorithmic synthesis is preferred over lookup tables.","headline":"Sine oscillator approximations in FAUST","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/jekyll/update/2025/10/16/Sine-Osc-approximations-in-Faust.html"},"url":"http://localhost:4000/jekyll/update/2025/10/16/Sine-Osc-approximations-in-Faust.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" type="text/css" href="/assets/main-light.css"></head>
+<body>
+    <div class="container"><header>
+  <div class="menu">
+
+    <div class="site-title">
+      <a href="/">Luca Spanedda</a>
+    </div>
+
+    <ul><li>
+          <a href="/">
+            /home
+          </a><span class="separator"> . </span></li><li>
+          <a href="/posts">
+            /posts
+          </a><span class="separator"> . </span></li><li>
+          <a href="/works">
+            /works
+          </a><span class="separator"> . </span></li><li>
+          <a href="/biography">
+            /biography
+          </a><span class="separator"> . </span></li><li>
+          <a href="/cv">
+            /cv
+          </a><span class="separator"> . </span></li><li>
+          <a href="/links">
+            /links
+          </a><span class="separator"> . </span></li><li>
+          <a href="/contact">
+            /contact
+          </a></li></ul>
+
+  </div>
+</header>
+<main>
+      <p>While FAUST provides optimized wavetable-based oscillators (<code class="language-plaintext highlighter-rouge">os.osc</code>), understanding explicit mathematical approximations of sinusoidal functions remains valuable for several reasons: educational insight into DSP fundamentals, scenarios requiring zero memory overhead, and contexts where algorithmic synthesis is preferred over lookup tables.</p>
+
+<p>Here we examines three distinct approximation strategies—Taylor series expansion, polynomial waveshaping, and rational approximation—with focus on their computational cost and practical implementation trade-offs.</p>
+
+<h2 id="the-fundamental-challenge">The Fundamental Challenge</h2>
+
+<p>A phasor generates a linear ramp from 0 to 1. Converting this to a sinusoid requires either:</p>
+
+<ol>
+  <li><strong>Wavetable lookup</strong> (~5-6 operations: multiplication, cast, memory reads, interpolation)</li>
+  <li><strong>Mathematical approximation</strong> (variable cost depending on method)</li>
+</ol>
+
+<p>Commercial synthesizers universally employ wavetables because memory (64KB for a high-quality table) is negligible compared to the performance gain. However, algorithmic approaches offer instructive alternatives.</p>
+
+<h2 id="triangle-wave-conversion">Triangle Wave Conversion</h2>
+
+<p>The first processing step is converting the phasor to a triangle wave that oscillates between -1 and +1. This normalization simplifies the subsequent sine approximation.</p>
+
+<pre><code class="language-faust">tri(x) = (x &lt; 0.5) * (4 * x - 1) + (x &gt;= 0.5) * (3 - 4 * x);
+</code></pre>
+
+<p><strong>profile:</strong></p>
+
+<ul>
+  <li>1 comparison (<code class="language-plaintext highlighter-rouge">x &lt; 0.5</code>)</li>
+  <li>1 comparison (<code class="language-plaintext highlighter-rouge">x &gt;= 0.5</code>)</li>
+  <li>4 multiplications</li>
+  <li>3 additions/subtractions</li>
+</ul>
+
+<p><strong>Total: ~6-8 operations</strong> (comparisons compile to conditional moves or masked operations in SIMD contexts)</p>
+
+<p>This triangle function is computationally lean and avoids expensive operations like <code class="language-plaintext highlighter-rouge">floor()</code> or modulo that higher-level abstractions (<code class="language-plaintext highlighter-rouge">ma.frac</code>) might introduce.</p>
+
+<h2 id="method-1-taylor-series-expansion">Method 1: Taylor Series Expansion</h2>
+
+<p>The Taylor series for sine around zero is:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sin(x) = x - x³/6 + x⁵/120 - x⁷/5040 + ...
+</code></pre></div></div>
+
+<p>Naive implementation would recompute powers repeatedly. The optimized version uses <strong>Horner’s method</strong> to minimize operations:</p>
+
+<pre><code class="language-faust">sintaylor(x) = x * (1 - x * x * (1.0/6 - x * x * (1.0/120 - x * x / 5040)));
+</code></pre>
+
+<p><strong>profile:</strong></p>
+
+<ul>
+  <li>1 multiplication to compute <code class="language-plaintext highlighter-rouge">x²</code></li>
+  <li>5 additional multiplications (reusing <code class="language-plaintext highlighter-rouge">x²</code>)</li>
+  <li>3 subtractions</li>
+  <li>Divisions by constants are precomputed by the compiler</li>
+</ul>
+
+<p><strong>Total: ~6 multiplications + 3 additions</strong></p>
+
+<p><strong>Precision:</strong> With 4 terms (up to x⁷), THD (Total Harmonic Distortion) is approximately 0.01%. Adding one more term (x⁹/362880) reduces this to ~0.0001%.</p>
+
+<p><strong>Scaling factor:</strong> The triangle output is multiplied by 0.90 instead of π/2 ≈ 1.5708 to keep the argument within the convergence range where the series is most accurate. This is a practical compromise that slightly reduces amplitude but significantly improves precision.</p>
+
+<h2 id="method-2-polynomial-waveshaping-minimax-approximation">Method 2: Polynomial Waveshaping (Minimax Approximation)</h2>
+
+<p>Unlike Taylor series (which converges around a single point), minimax polynomials are optimized to minimize the maximum error across an entire interval using Chebyshev or Remez exchange algorithms.</p>
+
+<pre><code class="language-faust">sinpoly(x) = x * (1.5708 - 0.645964 * x * x);
+</code></pre>
+
+<p><strong>Assembly profile:</strong></p>
+
+<ul>
+  <li>1 multiplication (<code class="language-plaintext highlighter-rouge">x²</code>)</li>
+  <li>2 multiplications</li>
+  <li>1 subtraction</li>
+</ul>
+
+<p><strong>Total: ~3 multiplications + 1 addition</strong></p>
+
+<p>This is <strong>half the computational cost</strong> of the Taylor series implementation while maintaining comparable accuracy for audio applications. The coefficients (1.5708, 0.645964) are empirically derived to minimize error in the [-π/2, π/2] range.</p>
+
+<p><strong>Trade-off:</strong> Fewer terms mean this approximation degrades faster outside the optimal range, but for normalized triangle input, the error remains below perceptual thresholds.</p>
+
+<h2 id="method-3-bhaskaras-rational-approximation">Method 3: Bhaskara’s Rational Approximation</h2>
+
+<p>Bhaskara I (7th century Indian mathematician) derived a rational approximation:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sin(x) ≈ 4x(π - x) / (π² - x(π - x))    for x ∈ [0, π]
+</code></pre></div></div>
+
+<p>Implementation requires careful input conditioning for positive and negative polarities:</p>
+
+<pre><code class="language-faust">sinbhaskara(x) = (4 * x * (PI - x)) / (PI * PI - x * (PI - x));
+
+sineoscbhaskara(x) = ((x - 0.5) * 2.0) &lt;: 
+    sinbhaskara(abs(_) * PI) * (((_ &lt; 0.0) * -1.0) + (_ &gt; 0.0)) * 0.7;
+</code></pre>
+
+<p><strong>profile:</strong></p>
+
+<ul>
+  <li>Input normalization: 2 multiplications, 1 subtraction</li>
+  <li>Absolute value: 1 comparison + conditional</li>
+  <li>Bhaskara formula: 6 multiplications, 3 additions, 1 division</li>
+  <li>Sign restoration: 2 comparisons, 2 multiplications</li>
+</ul>
+
+<p><strong>Total: ~9 multiplications + 1 division + 4 comparisons</strong></p>
+
+<p><strong>Characteristics:</strong></p>
+
+<ul>
+  <li>Division operation is expensive (~10-20 cycles on modern CPUs vs ~3-5 for multiplication)</li>
+  <li>Maximum error is ~0.0016 over [0, π] (historically remarkable for its simplicity)</li>
+  <li>The 0.7 scaling factor compensates for the approximation’s slight amplitude excess</li>
+</ul>
+
+<h2 id="practical-considerations">Practical Considerations</h2>
+
+<p><strong>When to use each method:</strong></p>
+
+<ul>
+  <li><strong>Polynomial waveshaping</strong>: Best balance for real-time DSP. Minimal CPU cost with acceptable precision.</li>
+  <li><strong>Taylor series</strong>: Preferred when precision is critical and extra terms can be added as needed.</li>
+  <li><strong>Bhaskara</strong>: Historical interest and educational value. The division operation makes it less suitable for high-polyphony contexts.</li>
+</ul>
+
+<p>The performance difference becomes critical in resource-constrained environments (embedded systems, mobile devices, or when CPU headroom is needed for filters, effects, and modulation).</p>
+
+<h2 id="code-implementation">Code Implementation</h2>
+
+<pre><code class="language-faust">import("stdfaust.lib");
+
+// High-precision π constant
+PI = 3.141592653589793238462643383279502884197169399375105820974944592307816;
+
+// Triangle wave converter (phasor [0,1] to triangle [-1,1])
+tri(x) = (x &lt; 0.5) * (4 * x - 1) + (x &gt;= 0.5) * (3 - 4 * x);
+
+// Method 1: Taylor series (Horner's method, 4 terms)
+sintaylor(x) = x * (1 - x * x * (1.0/6 - x * x * (1.0/120 - x * x / 5040)));
+// Or more
+sintaylor2(x) = x - (x * x * x) / 6 + (x * x * x * x * x) / 120 - 
+    (x * x * x * x * x * x * x) / 5040;
+sineosctaylor(x) = sintaylor(tri(x) * 0.5 * PI);
+// out
+process = os.phasor(1, si.smoo(hslider("F", 440, 20, 1000, 0.001))) : 
+    sineosctaylor * si.smoo(hslider("G", 0.8, 0, 1, 0.001));
+
+// Method 2: Minimax polynomial approximation  
+sinpoly(x) = x * (1.5708 - 0.645964 * x * x);
+sineoscpoly(x) = sinpoly(tri(x) * 0.90);
+// out
+/*
+process = os.phasor(1, si.smoo(hslider("F", 440, 20, 1000, 0.001))) : 
+    sineoscpoly * si.smoo(hslider("G", 0.8, 0, 1, 0.001));
+*/
+
+// Method 3: Bhaskara's rational approximation
+sinbhaskara(x) = (4 * x * (PI - x)) / (PI * PI - x * (PI - x));
+sineoscbhaskara(x) = ((x - 0.5) * 2.0) &lt;: 
+    sinbhaskara(abs(_) * PI) * (((_ &lt; 0.0) * -1.0) + (_ &gt; 0.0)) * 0.7;
+// out
+/*
+process = os.phasor(1, si.smoo(hslider("F", 440, 20, 1000, 0.001))) : 
+    sineoscbhaskara * si.smoo(hslider("G", 0.8, 0, 1, 0.001));
+*/
+</code></pre>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>While wavetable oscillators remain the industry standard for production environments, understanding these approximation methods provides insight into the computational mechanics of DSP. The polynomial waveshaping approach offers an excellent compromise between efficiency and precision, requiring only ~3× the operations of a wavetable while eliminating memory requirements entirely.</p>
+
+<p>For educational purposes, experimenting with these methods in FAUST reveals how mathematical abstractions translate to actual CPU cycles—a critical skill for optimizing real-time audio processing systems.</p>
+
+
+    </main><footer>
+  
+</footer>
+</div>
+  </body>
+</html>

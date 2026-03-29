@@ -1,0 +1,48 @@
+<details>
+  <summary style="
+      font-weight: 800;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 1em;
+      margin: 1em auto 0.5em auto;
+      color: #111;
+      letter-spacing: 0.02em;
+      width: 800px;
+      background-color: #f5f5f5;
+      padding: 4px 8px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      text-align: left;
+      cursor: pointer;
+  ">
+    (Listing 1) Duffing Oscillator
+  </summary>
+<faust-editor class="custom-faust-editor" style="
+      font-size: 0.8em;
+  ">
+  <!--
+import("stdfaust.lib");
+
+// duffing oscillator - parameters for chaotic regime
+duffing = f ~ si.bus(2)
+with {
+    f(x, y) = x + (y * dt) + initX,
+              y + ((-delta * y - alpha * x - beta * x * x * x +
+              gamma * cos(omega * time)) * dt) + initY;
+    dt = 0.01;
+    delta = 0.2;
+    alpha = -1.0;
+    beta = 1.0;
+    gamma = 0.3;
+    omega = 1.0;
+    time = (+ (dt) ~ _);
+    x0 = 0.1;
+    y0 = 0.2;
+    initX = x0 - mem(x0);
+    initY = y0 - mem(y0);
+};
+
+process = duffing : par(i, 2, _ * 0.5);
+  -->
+  </faust-editor>
+</details>
+  <script src="/assets/faust/faust-web-component.js"></script>
