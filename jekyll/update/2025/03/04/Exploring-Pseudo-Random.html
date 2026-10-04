@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; img-src 'self'; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; media-src 'self'; object-src 'self'; child-src 'self'; form-action 'none'; base-uri 'self'" />
+<html lang="en"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' data: blob:; media-src 'self' blob:; object-src 'self'; child-src 'self' blob:; form-action 'none'; base-uri 'self'" />
 <meta http-equiv="X-XSS-Protection"  content="1;mode=block" always>
 <meta http-equiv="Referrer-Policy" content="no-referrer, strict-origin-when-cross-origin"><head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Exploring Pseudo-Random and Stochastic Signals in Digital Sound Synthesis</title><!-- Begin Jekyll SEO tag v2.8.0 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <title>Exploring Pseudo-Random and Stochastic Signals in Digital Sound Synthesis · Luca Spanedda</title><!-- Begin Jekyll SEO tag v2.8.0 -->
 <meta name="generator" content="Jekyll v4.3.4" />
 <meta property="og:title" content="Exploring Pseudo-Random and Stochastic Signals in Digital Sound Synthesis" />
 <meta property="og:locale" content="en_US" />
@@ -22,7 +22,7 @@
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2025-03-04T17:10:18+01:00","datePublished":"2025-03-04T17:10:18+01:00","description":"Random and stochastic signals in synthesis can be useful for implementing time-varying oscillators and/or control signals. A common issue in digital synthesizers and audio effects is that the sounds often differ significantly from those produced in the physical world, due to the precise, time-invariant nature of signal generation in the digital domain.","headline":"Exploring Pseudo-Random and Stochastic Signals in Digital Sound Synthesis","mainEntityOfPage":{"@type":"WebPage","@id":"https://lucaspanedda.github.io/jekyll/update/2025/03/04/Exploring-Pseudo-Random.html"},"url":"https://lucaspanedda.github.io/jekyll/update/2025/03/04/Exploring-Pseudo-Random.html"}</script>
 <!-- End Jekyll SEO tag -->
-<link rel="stylesheet" type="text/css" href="/assets/main-light.css?v=1791124430"></head>
+<link rel="stylesheet" type="text/css" href="/assets/main-light.css?v=1791144686"></head>
 <body>
     <div class="container"><header>
   <div class="menu">
@@ -31,33 +31,19 @@
       <a href="/">Luca Spanedda</a>
     </div>
 
-    <ul><li>
-          <a href="/">
-            /home
-          </a><span class="separator"> . </span></li><li>
-          <a href="/posts">
-            /posts
-          </a><span class="separator"> . </span></li><li>
-          <a href="/works">
-            /works
-          </a><span class="separator"> . </span></li><li>
-          <a href="/biography">
-            /biography
-          </a><span class="separator"> . </span></li><li>
-          <a href="/cv">
-            /cv
-          </a><span class="separator"> . </span></li><li>
-          <a href="/links">
-            /links
-          </a><span class="separator"> . </span></li><li>
-          <a href="/contact">
-            /contact
-          </a></li></ul>
+    <ul><li><a href="/">/home</a><span class="separator">.</span></li><li><a href="/posts" class="current">/posts</a><span class="separator">.</span></li><li><a href="/works">/works</a><span class="separator">.</span></li><li><a href="/biography">/biography</a><span class="separator">.</span></li><li><a href="/cv">/cv</a><span class="separator">.</span></li><li><a href="/links">/links</a><span class="separator">.</span></li><li><a href="/contact">/contact</a></li></ul>
 
   </div>
 </header>
 <main>
-      <p>Random and stochastic signals in synthesis can be useful for implementing time-varying oscillators and/or control signals. A common issue in digital synthesizers and audio effects is that the sounds often differ significantly from those produced in the physical world, due to the precise, time-invariant nature of signal generation in the digital domain.</p>
+      <article>
+  <div class="post-header">
+    <a class="back" href="/posts">&larr; /posts</a>
+    <h1>Exploring Pseudo-Random and Stochastic Signals in Digital Sound Synthesis</h1>
+    <span class="date">[ 2025-03-04 ]</span>
+  </div>
+
+  <p>Random and stochastic signals in synthesis can be useful for implementing time-varying oscillators and/or control signals. A common issue in digital synthesizers and audio effects is that the sounds often differ significantly from those produced in the physical world, due to the precise, time-invariant nature of signal generation in the digital domain.</p>
 
 <p>In computers, time-varying details that occur unpredictably in the physics of sound must be carefully sequenced, often to the point of exhausting the resources of the computer (and the programmer).</p>
 
@@ -86,7 +72,7 @@ where <strong>A</strong> and <strong>C</strong> are carefully chosen constants, 
 
 <p>In Faust, a typical linear congruential generator following this method can be written as follows:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>import("stdfaust.lib");
+<pre><code class="language-faust">import("stdfaust.lib");
 
 // Pseudo-random noise with linear congruential generator (LCG)
 noise(initSeed) = lcg ~ _ : (_ / m)
@@ -95,7 +81,7 @@ with{
 lcg(seed) = ((a * seed + c) + (initSeed - initSeed') % m);
 };
 process = noise(1212);
-</code></pre></div></div>
+</code></pre>
 
 <p>This algorithm will generate a new random value on every sample, corresponding to the sample rate of the system.</p>
 
@@ -137,7 +123,7 @@ process = noise(1212);
 
 <p>It is also possible to generate multiple outputs from the same linear congruential generator by adding an internal sequential operation <code class="language-plaintext highlighter-rouge">seqN</code> that repeats the <code class="language-plaintext highlighter-rouge">LCG</code> process in series and takes multiple taps. Here’s an example of how you can create multiple outputs:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>import("stdfaust.lib");
+<pre><code class="language-faust">import("stdfaust.lib");
 
 // Noise - Linear Congruential Generator - Multiple Outputs
 multinoise(N, initSeed) = ((_ + (initSeed - initSeed') :
@@ -150,7 +136,7 @@ with{
         si.bus(i + 1)) : (_, !, si.bus(N - 1), !);
 };
 process = multinoise(4, 1212);
-</code></pre></div></div>
+</code></pre>
 
 <h2 id="low-frequency-noise-generator">Low frequency Noise Generator</h2>
 
@@ -160,7 +146,7 @@ process = multinoise(4, 1212);
 
 <p>In Faust, we can write a sample-and-hold function as follows:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>import("stdfaust.lib");
+<pre><code class="language-faust">import("stdfaust.lib");
 
 // a classic sample and hold
 sah(x, t) = selector(t, _, x) ~ _
@@ -168,7 +154,7 @@ with{
     // binary selector
     selector(sel, x, y) = x * (1 - sel) + y * (sel);
 };
-</code></pre></div></div>
+</code></pre>
 
 <p>How <code class="language-plaintext highlighter-rouge">sah</code> Works:</p>
 
@@ -196,7 +182,7 @@ with{
 
 <p>We can write a single-sample trigger as follows:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>import("stdfaust.lib");
+<pre><code class="language-faust">import("stdfaust.lib");
 
 // Synchronous pulse train in HZ
 metro(ms) = phasor0(1000 / max(1, ms)) : derivate + dirac
@@ -209,7 +195,7 @@ with{
     derivate(x) = x &lt; x';
 };
 process = metro(100);
-</code></pre></div></div>
+</code></pre>
 
 <p>How the Synchronous Pulse Train (<code class="language-plaintext highlighter-rouge">metro</code>) Works:</p>
 
@@ -257,12 +243,12 @@ process = metro(100);
 
 <p>Now that our modules are complete, we can connect them together to sample the noise input at a low sampling rate, building the low-frequency noise generator as follows:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>process = noise(1212), metro(100) : sah;
-</code></pre></div></div>
+<pre><code class="language-faust">process = noise(1212), metro(100) : sah;
+</code></pre>
 
 <p>Or by putting everything together in a single function:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>import("stdfaust.lib");
+<pre><code class="language-faust">import("stdfaust.lib");
 
 // noise sampled with a classic sample and hold
 sahNoise(seed, f) = selector(pulseTrain, _, noise(seed)) ~ _
@@ -282,7 +268,7 @@ with{
     pulseTrain = phasor0 : derivate + dirac;
 };
 process = sahNoise(1212, 100);
-</code></pre></div></div>
+</code></pre>
 
 <p>This will sample random values every 100 milliseconds.</p>
 
@@ -291,7 +277,7 @@ we obtain a random number generator.</p>
 
 <p>A new random number is generated each time the user clicks the GUI button.</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>import("stdfaust.lib");
+<pre><code class="language-faust">import("stdfaust.lib");
 
 // random number generator
 random(range, seed, trigger) = ((noise(seed) : abs), dirac(trigger)) :
@@ -313,7 +299,7 @@ with{
     };
 };
 process = random(100, 1212, button("trigger"));
-</code></pre></div></div>
+</code></pre>
 
 <p>where <code class="language-plaintext highlighter-rouge">abs</code> ensures only positive values by applying the absolute value, <code class="language-plaintext highlighter-rouge">range</code> is a multiplication factor that determines the output range, extending it beyond [0, 1] to [0, <code class="language-plaintext highlighter-rouge">range</code>], and <code class="language-plaintext highlighter-rouge">dirac(x) = (x - x') &gt; 0;</code> transforms a signal with a bandwidth larger than a single sample into a single-sample impulse.</p>
 
@@ -327,7 +313,7 @@ process = random(100, 1212, button("trigger"));
 
 <p>The following Faust code implements a <em>random impulse generator</em>, where the impulses occur at irregular intervals based on a pseudo-random number generator. The intervals are constrained to a range between <code class="language-plaintext highlighter-rouge">ms1</code> and <code class="language-plaintext highlighter-rouge">ms2</code>, specified in milliseconds.</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// random impulse generator / ms1 &amp; ms2 = range
+<pre><code class="language-faust">// random impulse generator / ms1 &amp; ms2 = range
 randometro(seed, ms1, ms2) = randomtrigger
 with{
     // Pseudo-random noise with linear congruential generator (LCG)
@@ -353,13 +339,13 @@ with{
         sah : pulseTrain) ~ _;
 };
 //process = randometro(1212, 100, 4000), randometro(1234, 100, 4000);
-</code></pre></div></div>
+</code></pre>
 
 <p>The function <code class="language-plaintext highlighter-rouge">randometro(seed, ms1, ms2)</code> takes as its input a seed value for the LCG and <em>ms1, ms2</em> as the bounds of the random interval range, given in milliseconds.</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>msMin = min((1000 / max(1, ms1)), (1000 / max(1, ms2)));
+<pre><code class="language-faust">msMin = min((1000 / max(1, ms1)), (1000 / max(1, ms2)));
 msMax = max((1000 / max(1, ms1)), (1000 / max(1, ms2)));
-</code></pre></div></div>
+</code></pre>
 
 <p>This converts the input intervals <em>ms1</em> and <em>ms2</em> (in milliseconds) into corresponding frequencies in Hz.</p>
 
@@ -367,9 +353,9 @@ msMax = max((1000 / max(1, ms1)), (1000 / max(1, ms2)));
 
 <p>Beyond the functions we have already discussed, the core of the random impulse train is defined as:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>randomtrigger = ((_ + dirac), abs(noise(seed)) * (msMax - msMin) + msMin :
+<pre><code class="language-faust">randomtrigger = ((_ + dirac), abs(noise(seed)) * (msMax - msMin) + msMin :
     sah : pulseTrain) ~ _;
-</code></pre></div></div>
+</code></pre>
 
 <p>The function generates a random interval using <code class="language-plaintext highlighter-rouge">noise(seed)</code>, scaled to the range <code class="language-plaintext highlighter-rouge">[msMin, msMax]</code>.</p>
 
@@ -383,7 +369,7 @@ msMax = max((1000 / max(1, ms1)), (1000 / max(1, ms2)));
 
 <p>Below is the complete code that brings it all together:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>import("stdfaust.lib");
+<pre><code class="language-faust">import("stdfaust.lib");
 
 // SAH noise at random intervals / ms1 &amp; ms2 = range
 sahNoiserandom(seed, ms1, ms2) = selector(randometro, _, noise(seed)) ~ _
@@ -417,7 +403,7 @@ with{
     };
 };
 process = sahNoiserandom(1212, 100, 4000);
-</code></pre></div></div>
+</code></pre>
 
 <h2 id="stochastic-signals">Stochastic Signals</h2>
 
@@ -444,7 +430,7 @@ process = sahNoiserandom(1212, 100, 4000);
 <p>I attempted and succeeded in porting this model to Faust.
 Below is the Faust code that implements the random walk process.</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>import("stdfaust.lib");
+<pre><code class="language-faust">import("stdfaust.lib");
 
 // random walk generator : variable steps and max value
 drunk(seed, maxvalue, stepsize, trigger) = noise(seed), (trigger : dirac) :
@@ -469,7 +455,7 @@ with{
     foldInt(maxv, x) = maxv - abs((abs(x) % (2 * maxv)) - maxv);
 };
 process = (os.phasor(1, 10) - 0.1 &lt; 0.0) : drunk(1212, 100, 10);
-</code></pre></div></div>
+</code></pre>
 
 <p>In this code, at every trigger input, the sample and hold noise provides an integer value between a base of 1 and a maximum value, similar to how we implement the random impulse generator. However, the key difference is that at each step, the value is held inside the integrator (<code class="language-plaintext highlighter-rouge">+ ~ _</code>), and at successive steps, a sum or difference is performed between the value stored in the integrator and the new value generated.</p>
 
@@ -481,7 +467,7 @@ process = (os.phasor(1, 10) - 0.1 &lt; 0.0) : drunk(1212, 100, 10);
 
 <p>An alternative way to program a random walk in Faust in response to these problems could be simpler than this last one. By changing the direction of the signal at every sample, we can impose a condition on the noise generator to produce only binary values in the range of [-1, 1]. To avoid discontinuities, we can use integration techniques such as linear interpolation or filters to smooth the signal.</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>randomWalk(seed, speed, smooth, trigger) = binaryNoise(seed) / ma.SR : + ~ _ : _ * speed : wavefolding : fi.lowpass(1, 1 / smooth)
+<pre><code class="language-faust">randomWalk(seed, speed, smooth, trigger) = binaryNoise(seed) / ma.SR : + ~ _ : _ * speed : wavefolding : fi.lowpass(1, 1 / smooth)
 with{
     // transform a constant to 1 sample trigger
     dirac(x) = (x - x') &gt; 0;
@@ -509,16 +495,22 @@ with{
     };
 };
 process = (os.phasor(1, 100) - 0.1 &lt; 0.0) : randomWalk(1212, 10, 2);
-</code></pre></div></div>
+</code></pre>
 
 <p>This last code is an example of how one can generate a non-linear, fully functioning control signal from a stochastic model like the random walk, or from other generators to obtain complex behaviors. We can address the resolution of this kind of problem by focusing on continuity, since from the <strong>RAN</strong> object in <strong>Music V</strong>. In his book on computer music (Mathews, <em>The Technology of Computer Music</em>), Max Mathews explains how, in the random number generator, he achieved a continuous function using linear interpolation methods.</p>
 
 <p>The calibration of non-linear signal processing is an art in itself, involving a range of functional models beyond the one described here. It requires studying and refining the response of control signals and is closely tied to the type of analysis and behavior a composer or programmer seeks to achieve in their algorithm. Given the importance of this topic, it will require further focus, which I will explore in more depth in future posts.</p>
 
+  <nav class="post-nav"><a class="prev" href="/jekyll/update/2025/03/04/Digital-Reverberation.html">&larr; Digital Reverberation - a tutorial in...</a><a class="next" href="/jekyll/update/2025/10/16/Sine-Osc-approximations-in-Faust.html">Sine oscillator approximations in FAUST &rarr;</a>
+  </nav>
+</article>
 
     </main><footer>
-  
+  <span>© 2026 Luca Spanedda</span>
+  <span><a href="/feed.xml">rss</a></span>
 </footer>
+<link rel="stylesheet" href="/assets/faust/faust-blocks.css">
+<script defer src="/assets/faust/faust-blocks.js"></script>
 </div>
   </body>
 </html>

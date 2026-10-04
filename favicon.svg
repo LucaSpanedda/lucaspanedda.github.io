@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- > ls_   (ls = Luca Spanedda, e il comando del terminale) -->
+  <rect width="32" height="32" rx="3" fill="#222"/>
+  <path d="M4 10.5 L9 15 L4 19.5" fill="none" stroke="#fafafa" stroke-width="2.4" stroke-linecap="square"/>
+  <text x="11" y="21" font-family="Menlo, Consolas, 'DejaVu Sans Mono', monospace" font-size="13.5" font-weight="bold" fill="#fafafa" letter-spacing="-0.5">ls</text>
+  <rect x="26" y="19" width="4" height="2.4" fill="#fafafa"/>
+</svg>

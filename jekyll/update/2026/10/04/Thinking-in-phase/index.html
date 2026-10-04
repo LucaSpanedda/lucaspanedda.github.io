@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; img-src 'self'; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; media-src 'self'; object-src 'self'; child-src 'self'; form-action 'none'; base-uri 'self'" />
+<html lang="en"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' data: blob:; media-src 'self' blob:; object-src 'self'; child-src 'self' blob:; form-action 'none'; base-uri 'self'" />
 <meta http-equiv="X-XSS-Protection"  content="1;mode=block" always>
 <meta http-equiv="Referrer-Policy" content="no-referrer, strict-origin-when-cross-origin"><head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Thinking in phase: from a one-sample delay to the Hilbert transform in FAUST</title><!-- Begin Jekyll SEO tag v2.8.0 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <title>Thinking in phase: from a one-sample delay to the Hilbert transform in FAUST · Luca Spanedda</title><!-- Begin Jekyll SEO tag v2.8.0 -->
 <meta name="generator" content="Jekyll v4.3.4" />
 <meta property="og:title" content="Thinking in phase: from a one-sample delay to the Hilbert transform in FAUST" />
 <meta property="og:locale" content="en_US" />
@@ -22,7 +22,7 @@
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2026-10-04T12:00:00+02:00","datePublished":"2026-10-04T12:00:00+02:00","description":"What happens to a signal when you add a copy of itself delayed by a single sample? Following that question step by step leads through FIR and feedback filters, poles and zeros, the comb, the allpass, and the difference between a delay in time and a delay in degrees, up to the Hilbert transform: two chains of allpass filters that let you shift every frequency by the same angle.","headline":"Thinking in phase: from a one-sample delay to the Hilbert transform in FAUST","mainEntityOfPage":{"@type":"WebPage","@id":"https://lucaspanedda.github.io/jekyll/update/2026/10/04/Thinking-in-phase/"},"url":"https://lucaspanedda.github.io/jekyll/update/2026/10/04/Thinking-in-phase/"}</script>
 <!-- End Jekyll SEO tag -->
-<link rel="stylesheet" type="text/css" href="/assets/main-light.css?v=1791124430"></head>
+<link rel="stylesheet" type="text/css" href="/assets/main-light.css?v=1791144686"></head>
 <body>
     <div class="container"><header>
   <div class="menu">
@@ -31,33 +31,19 @@
       <a href="/">Luca Spanedda</a>
     </div>
 
-    <ul><li>
-          <a href="/">
-            /home
-          </a><span class="separator"> . </span></li><li>
-          <a href="/posts">
-            /posts
-          </a><span class="separator"> . </span></li><li>
-          <a href="/works">
-            /works
-          </a><span class="separator"> . </span></li><li>
-          <a href="/biography">
-            /biography
-          </a><span class="separator"> . </span></li><li>
-          <a href="/cv">
-            /cv
-          </a><span class="separator"> . </span></li><li>
-          <a href="/links">
-            /links
-          </a><span class="separator"> . </span></li><li>
-          <a href="/contact">
-            /contact
-          </a></li></ul>
+    <ul><li><a href="/">/home</a><span class="separator">.</span></li><li><a href="/posts" class="current">/posts</a><span class="separator">.</span></li><li><a href="/works">/works</a><span class="separator">.</span></li><li><a href="/biography">/biography</a><span class="separator">.</span></li><li><a href="/cv">/cv</a><span class="separator">.</span></li><li><a href="/links">/links</a><span class="separator">.</span></li><li><a href="/contact">/contact</a></li></ul>
 
   </div>
 </header>
 <main>
-      <p>What happens to a signal when you add a copy of itself delayed by a single sample? Following that question step by step leads through FIR and feedback filters, poles and zeros, the comb, the allpass, and the difference between a delay in time and a delay in degrees, up to the Hilbert transform: two chains of allpass filters that let you shift every frequency by the same angle.</p>
+      <article>
+  <div class="post-header">
+    <a class="back" href="/posts">&larr; /posts</a>
+    <h1>Thinking in phase: from a one-sample delay to the Hilbert transform in FAUST</h1>
+    <span class="date">[ 2026-10-04 ]</span>
+  </div>
+
+  <p>What happens to a signal when you add a copy of itself delayed by a single sample? Following that question step by step leads through FIR and feedback filters, poles and zeros, the comb, the allpass, and the difference between a delay in time and a delay in degrees, up to the Hilbert transform: two chains of allpass filters that let you shift every frequency by the same angle.</p>
 
 <p><strong>Conventions</strong></p>
 
@@ -956,10 +942,16 @@ process = os.osc(1000.0) : fshift(hslider("Shift [unit:Hz]", 100.0, 0.0, 500.0, 
   <li>Faust libraries: <code class="language-plaintext highlighter-rouge">fi.hilbert</code>, <code class="language-plaintext highlighter-rouge">fi.pospass</code>, <code class="language-plaintext highlighter-rouge">pf.phaser2_mono</code></li>
 </ul>
 
+  <nav class="post-nav"><a class="prev" href="/jekyll/update/2025/10/16/Sine-Osc-approximations-in-Faust.html">&larr; Sine oscillator approximations in FAUST</a>
+  </nav>
+</article>
 
     </main><footer>
-  
+  <span>© 2026 Luca Spanedda</span>
+  <span><a href="/feed.xml">rss</a></span>
 </footer>
+<link rel="stylesheet" href="/assets/faust/faust-blocks.css">
+<script defer src="/assets/faust/faust-blocks.js"></script>
 </div>
   </body>
 </html>

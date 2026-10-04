@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; img-src 'self'; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; media-src 'self'; object-src 'self'; child-src 'self'; form-action 'none'; base-uri 'self'" />
+<html lang="en"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' data: blob:; media-src 'self' blob:; object-src 'self'; child-src 'self' blob:; form-action 'none'; base-uri 'self'" />
 <meta http-equiv="X-XSS-Protection"  content="1;mode=block" always>
 <meta http-equiv="Referrer-Policy" content="no-referrer, strict-origin-when-cross-origin"><head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>About this filters business - a tutorial on Digital Filters in Faust</title><!-- Begin Jekyll SEO tag v2.8.0 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <title>About this filters business - a tutorial on Digital Filters in Faust · Luca Spanedda</title><!-- Begin Jekyll SEO tag v2.8.0 -->
 <meta name="generator" content="Jekyll v4.3.4" />
 <meta property="og:title" content="About this filters business - a tutorial on Digital Filters in Faust" />
 <meta property="og:locale" content="en_US" />
@@ -22,7 +22,7 @@
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2025-03-04T17:10:18+01:00","datePublished":"2025-03-04T17:10:18+01:00","description":"Preludes to Filter Syntax in Faust","headline":"About this filters business - a tutorial on Digital Filters in Faust","mainEntityOfPage":{"@type":"WebPage","@id":"https://lucaspanedda.github.io/jekyll/update/2025/03/04/About-this-filters-business.html"},"url":"https://lucaspanedda.github.io/jekyll/update/2025/03/04/About-this-filters-business.html"}</script>
 <!-- End Jekyll SEO tag -->
-<link rel="stylesheet" type="text/css" href="/assets/main-light.css?v=1791124430"></head>
+<link rel="stylesheet" type="text/css" href="/assets/main-light.css?v=1791144686"></head>
 <body>
     <div class="container"><header>
   <div class="menu">
@@ -31,44 +31,30 @@
       <a href="/">Luca Spanedda</a>
     </div>
 
-    <ul><li>
-          <a href="/">
-            /home
-          </a><span class="separator"> . </span></li><li>
-          <a href="/posts">
-            /posts
-          </a><span class="separator"> . </span></li><li>
-          <a href="/works">
-            /works
-          </a><span class="separator"> . </span></li><li>
-          <a href="/biography">
-            /biography
-          </a><span class="separator"> . </span></li><li>
-          <a href="/cv">
-            /cv
-          </a><span class="separator"> . </span></li><li>
-          <a href="/links">
-            /links
-          </a><span class="separator"> . </span></li><li>
-          <a href="/contact">
-            /contact
-          </a></li></ul>
+    <ul><li><a href="/">/home</a><span class="separator">.</span></li><li><a href="/posts" class="current">/posts</a><span class="separator">.</span></li><li><a href="/works">/works</a><span class="separator">.</span></li><li><a href="/biography">/biography</a><span class="separator">.</span></li><li><a href="/cv">/cv</a><span class="separator">.</span></li><li><a href="/links">/links</a><span class="separator">.</span></li><li><a href="/contact">/contact</a></li></ul>
 
   </div>
 </header>
 <main>
-      <h2 id="preludes-to-filter-syntax-in-faust">Preludes to Filter Syntax in Faust</h2>
+      <article>
+  <div class="post-header">
+    <a class="back" href="/posts">&larr; /posts</a>
+    <h1>About this filters business - a tutorial on Digital Filters in Faust</h1>
+    <span class="date">[ 2025-03-04 ]</span>
+  </div>
+
+  <h2 id="preludes-to-filter-syntax-in-faust">Preludes to Filter Syntax in Faust</h2>
 
 <h3 id="constructing-a-delay-line">Constructing a delay line</h3>
 
 <p>In FAUST the <code class="language-plaintext highlighter-rouge">_</code> represent a signal input.
 A function with one input that goes directly to the output is written as follows:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>import("stdfaust.lib");
+<pre><code class="language-faust">import("stdfaust.lib");
 
 // signal input - output
 //process = _;
-</code></pre></div></div>
+</code></pre>
 
 <p>where <code class="language-plaintext highlighter-rouge">process</code> is the <strong><em>main</em></strong> function in Faust (the compiler’s output function).
 And <code class="language-plaintext highlighter-rouge">import("stdfaust.lib");</code> is the function for import the Standard Faust Libraries.</p>
@@ -79,9 +65,9 @@ And <code class="language-plaintext highlighter-rouge">import("stdfaust.lib");</
   <li><code class="language-plaintext highlighter-rouge">'</code> - is used to express a one sample delay. Time expressions can be chained, so the output signal of this program</li>
 </ul>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// signal in delay (' = mem), (mem = Z^(-1))
+<pre><code class="language-faust">// signal in delay (' = mem), (mem = Z^(-1))
  //process = _'';
-</code></pre></div></div>
+</code></pre>
 
 <p>will produce a delayed signal of two samples.</p>
 
@@ -89,18 +75,18 @@ And <code class="language-plaintext highlighter-rouge">import("stdfaust.lib");</
   <li><code class="language-plaintext highlighter-rouge">mem</code> - indicates a 1 sample delay. You can use the “mem” successively add delay samples, so the output signal of this program</li>
 </ul>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// signal in delay (' = mem), (mem = Z^(-1))
+<pre><code class="language-faust">// signal in delay (' = mem), (mem = Z^(-1))
 //process = _ : mem : mem : _;
-</code></pre></div></div>
+</code></pre>
 
 <p>will produce a delayed signal of two samples.
 <strong>These last two programs produce the same result.</strong></p>
 
 <p><code class="language-plaintext highlighter-rouge">@</code> - indicates a number of variable delay samples, so for example a signal with 192000 samples of delay is written like:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> // signal in delay (@192000 = 192000 samples of delay)
+<pre><code class="language-faust"> // signal in delay (@192000 = 192000 samples of delay)
  //process = _ @ 192000;
-</code></pre></div></div>
+</code></pre>
 
 <hr />
 
@@ -112,17 +98,17 @@ but doing it at a delayed sample.</p>
 
 <p>Example:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// Dirac Impulse with delay lines - Impulse at Compile Time  
+<pre><code class="language-faust">// Dirac Impulse with delay lines - Impulse at Compile Time  
  dirac0 = 1 - 1';  
  //process = dirac0;
-</code></pre></div></div>
+</code></pre>
 
 <p>or something like that using functional syntax:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// Dirac Impulse with delay lines - Impulse at Compile Time  
+<pre><code class="language-faust">// Dirac Impulse with delay lines - Impulse at Compile Time  
  dirac1(x) = x - x';  
  //process = dirac1(1);
-</code></pre></div></div>
+</code></pre>
 
 <hr />
 
@@ -142,9 +128,9 @@ in the code, is to put parentheses <code class="language-plaintext highlighter-r
 will point to the input before the parenthesis.
 In this program, the input is summed with itself delayed by one sample and multiplied by 0.5:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  // dirac in feedback in sin
+<pre><code class="language-faust">  // dirac in feedback in sin
   //process = (1 - 1') * 1000 : (_ + _) ~ _ * (0.9999) : sin;
-</code></pre></div></div>
+</code></pre>
 
 <ul>
   <li>Using the with construction <code class="language-plaintext highlighter-rouge">with{};</code>:
@@ -159,7 +145,7 @@ You can find an exhaustive explanation of <a href="https://faustdoc.grame.fr/man
 
 <p>Example:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>   // with environment example (dirac in feedback in sin)
+<pre><code class="language-faust">   // with environment example (dirac in feedback in sin)
    //where out ~ _ returns to itself.
    function_with(input1, input2) = out ~ _ : sin
        	with{   
@@ -168,7 +154,7 @@ You can find an exhaustive explanation of <a href="https://faustdoc.grame.fr/man
         		out = section2;
         	};
    //process = function_with(1000, 0.9999);
-</code></pre></div></div>
+</code></pre>
 
 <p>Moreover, with in Faust allows declaring variables
  that are not pointed to from outside the code but only
@@ -183,7 +169,7 @@ with this method we can write a signal
 recursively, similar to how
 recurrence equations are written.</p>
 
-    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// letrec function  
+    <pre><code class="language-faust">// letrec function  
  function_letrec = sin(y)
  // letrec definition  
  	letrec {  
@@ -196,7 +182,7 @@ recurrence equations are written.</p>
          amp = 0.9999;
      };  
 //process = function_letrec &lt;: si.bus(2);
-</code></pre></div>    </div>
+</code></pre>
   </li>
 </ul>
 
@@ -222,11 +208,11 @@ For now, let’s focus on small examples of converting between milliseconds and 
 <p>This program takes input time expressed in milliseconds
 and returns the value in samples.</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// milliseconds to samples conversion
+<pre><code class="language-faust">// milliseconds to samples conversion
 milliseconds = 10;
 msec2samps(msec) = msec * (ma.SR/1000);
 //process = msec2samps(milliseconds);
-</code></pre></div></div>
+</code></pre>
 
 <p>Through <code class="language-plaintext highlighter-rouge">ma.SR</code>, we use the current sampling frequency of
 the machine we are using.
@@ -283,9 +269,9 @@ and thus a greater definition.</p>
 <p>We need to spend a few words about the implementation of a delay line in feedback in the digital world.
 In the following program, we have a Dirac impulse that is summed by itselfs delayed by 2 samples.</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// dirac delayed
+<pre><code class="language-faust">// dirac delayed
 //process = (_ + (1 - 1')) ~ _ @2;
-</code></pre></div></div>
+</code></pre>
 
 <p>We expect these values to appear in the first 10 samples:</p>
 
@@ -400,18 +386,18 @@ delay line, when applied, costs by default one sample delay.
 
 <p>So one must consider that the number of delay samples equals the number of samples minus 1:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// dirac delayed + phase alignment
+<pre><code class="language-faust">// dirac delayed + phase alignment
 delSampsDirac0 = 2;
 //process = (_ + (1 - 1')) ~ _@(delSampsDirac0 - 1);
-</code></pre></div></div>
+</code></pre>
 
 <p>In some application scenarios later on, we’ll need a one-sample delay even at the input signal.
 In this case, simply concatenating a delay line in series will suffice.</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// dirac delayed + phase alignment (final)
+<pre><code class="language-faust">// dirac delayed + phase alignment (final)
 delSampsDirac1 = 2;
 //process = (_ + (1 - 1')) ~ _@(delSampsDirac1 - 1) : mem;
-</code></pre></div></div>
+</code></pre>
 
 <hr />
 
@@ -428,19 +414,19 @@ delSampsDirac1 = 2;
     there is a general amplitude control <code class="language-plaintext highlighter-rouge">* outgain</code>
     on the output function onezeroout</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// onezero, g = give amplitude 0 to +/- 1 (open - close) to the delayed signal  
+<pre><code class="language-faust">// onezero, g = give amplitude 0 to +/- 1 (open - close) to the delayed signal  
 oz(b1) = _ &lt;: (_ : mem * b1), _ :&gt; +;  
 //process = oz;
-</code></pre></div></div>
+</code></pre>
 
 <h3 id="onepole-filter-1st-order-iir">ONEPOLE FILTER (1st Order IIR)</h3>
 
 <p><code class="language-plaintext highlighter-rouge">+ ~</code> is the summation, and the feedback of the arguments inside parentheses <code class="language-plaintext highlighter-rouge">()_</code> represents the input signal, (<code class="language-plaintext highlighter-rouge">_</code> denotes the signal) delayed by one sample <code class="language-plaintext highlighter-rouge">_</code> (automatically in the feedback) which enters : into the gain control of the <code class="language-plaintext highlighter-rouge">feedback * 1-feedback</code> the same feedback controls the input amplification of the signal not injected into the feedback there is a general amplitude control <code class="language-plaintext highlighter-rouge">* outgain</code> on the output function onezeroout</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// onepole, g = give amplitude 0 to +/- 1 (open - close) to the delayed signal  
+<pre><code class="language-faust">// onepole, g = give amplitude 0 to +/- 1 (open - close) to the delayed signal  
 op(b1) = _ * (1 - abs(b1)) : + ~ * (b1);
 //process = op;
-</code></pre></div></div>
+</code></pre>
 
 <p>and OPF with Frequency Cut transfer functions:</p>
 
@@ -448,23 +434,23 @@ op(b1) = _ * (1 - abs(b1)) : + ~ * (b1);
   <li>(1)</li>
 </ul>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// onepole with frequency cut formula (chamberlin), fc = Hz
+<pre><code class="language-faust">// onepole with frequency cut formula (chamberlin), fc = Hz
 lp1p(fc) = _ * g : + ~ * (1 - g)
     with{
         k(x) = x / (1.0 + x);
         g = tan(fc * ma.PI / SR) : k;
     };
 //process = lp1p;
-</code></pre></div></div>
+</code></pre>
 
 <ul>
   <li>(2)
-    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>lp1p2(fc) = _ * (1 - b1) : + ~ * (b1)
+    <pre><code class="language-faust">lp1p2(fc) = _ * (1 - b1) : + ~ * (b1)
     with {
          b1 = exp((fc * ma.PI / ma.SR) * -1);
     };
 //process = lp1p2;
-</code></pre></div>    </div>
+</code></pre>
   </li>
 </ul>
 
@@ -473,14 +459,14 @@ lp1p(fc) = _ * g : + ~ * (1 - g)
   <li>(3)</li>
 </ul>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// onepole in seconds or smooth function
+<pre><code class="language-faust">// onepole in seconds or smooth function
 opsec(sec) = _ * g : + ~ * (1 - g)
     with{
         k(x) = x / (1.0 + x);
         g = tan((1 / sec) * ma.PI / ma.SR) : k;
     };
 //process = opsec;
-</code></pre></div></div>
+</code></pre>
 
 <hr />
 
@@ -492,10 +478,10 @@ opsec(sec) = _ * g : + ~ * (1 - g)
 
 <p>there is a general amplitude control <code class="language-plaintext highlighter-rouge">* outgain</code> on the output function onezeroout</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// feedforward comb filter, (t, g) = delay time in samples, filter gain 0-1  
+<pre><code class="language-faust">// feedforward comb filter, (t, g) = delay time in samples, filter gain 0-1  
 ffcf(t, g) = _ &lt;: ((_ @ (t)) * g), _ :&gt; +;  
 //process = (1000, 0.9, _) : ffcf;
-</code></pre></div></div>
+</code></pre>
 
 <h3 id="feedback-comb-filter-nth-order-iir">FEEDBACK COMB FILTER (Nth Order IIR)</h3>
 
@@ -505,19 +491,19 @@ ffcf(t, g) = _ &lt;: ((_ @ (t)) * g), _ :&gt; +;
 
 <p>there is a general amplitude control <code class="language-plaintext highlighter-rouge">* outgain</code> on the output function combfeedbout</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// feedback comb filter, (t, g) = give: delay time in samples, feedback gain 0-1
+<pre><code class="language-faust">// feedback comb filter, (t, g) = give: delay time in samples, feedback gain 0-1
 fbcf(t, g) = _ : (+  @(t - 1) ~ *(g)) : mem;
 //process = (1000, 0.9, _) : fbcf;
-</code></pre></div></div>
+</code></pre>
 
 <h3 id="lowpass-feedback-comb-filter-nth-order-iir">Lowpass FEEDBACK COMB FILTER (Nth Order IIR)</h3>
 
 <p>similar to the comb filter, but within the feedback, following the feedback enters the signal : into the onepole. The onepole is a lowpass where the cutoff frequency can be controlled between 0. and 1. In the feedback, one sample of delay is already present by default, hence <code class="language-plaintext highlighter-rouge">delaysamples-1</code>.</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// lowpass feedback comb filter, (t, g) = give: delay time in samples, g gain 0-1, Freq cut (HZ)
+<pre><code class="language-faust">// lowpass feedback comb filter, (t, g) = give: delay time in samples, g gain 0-1, Freq cut (HZ)
 lbcf(t, g, fc) = _ : (+  @(t - 1) ~ (lp1p(fc) * (g))) : mem;
 //process = (1000, 0.9, 10000, _) : lbcf;
-</code></pre></div></div>
+</code></pre>
 
 <hr />
 
@@ -525,16 +511,16 @@ lbcf(t, g, fc) = _ : (+  @(t - 1) ~ (lp1p(fc) * (g))) : mem;
 
 <p>from the sum of a comb IIR and a comb FIR in opposition of phase, emerge a recursive delay unit that preserve the phase of the input signal. (<code class="language-plaintext highlighter-rouge">+</code> transitions : to a cable <code class="language-plaintext highlighter-rouge">_</code> and a split <code class="language-plaintext highlighter-rouge">&lt;:</code> then <code class="language-plaintext highlighter-rouge">@delay</code> and gain, in <code class="language-plaintext highlighter-rouge">feedback ~</code> to the initial sum. filtergain controls the amplitude of the two gain states, which in the filter are the same value but positive and negative, one side <code class="language-plaintext highlighter-rouge">* -filtergain</code> and one side <code class="language-plaintext highlighter-rouge">* +filtergain</code>. In the feedback, one sample of delay is already present by default, hence <code class="language-plaintext highlighter-rouge">delaysamples-1</code>. To maintain the delay threshold of the value delaysamples, a mem delay (of the subtracted sample) is added at the end.</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// allpass filter, (t, g) = give: delay in samples, feedback gain 0-1
+<pre><code class="language-faust">// allpass filter, (t, g) = give: delay in samples, feedback gain 0-1
 apf(t, g) = _ : (+ : _ &lt;: @(t  - 1), *(g))~ *(-g) : mem, _ : + : _;
 //process = (1000, 0.9, _) : apf;
-</code></pre></div></div>
+</code></pre>
 
 <h3 id="modulated-allpass-filter">MODULATED ALLPASS FILTER</h3>
 
 <p>Allpass Filter with Time-Variant delay</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// Modulated Allpass filter
+<pre><code class="language-faust">// Modulated Allpass filter
 modapf(delsamples, samplesmod, freqmod, apcoeff) = ( + : _ &lt;:  
     delayMod(delsamples, samplesmod, freqmod),
     * (apcoeff))~ * (-apcoeff) : mem, _ : + : _
@@ -546,7 +532,7 @@ modapf(delsamples, samplesmod, freqmod, apcoeff) = ( + : _ &lt;:
         };
     };
 //process = _ &lt;: modapf(1100, 800, .12, .99), modapf(1000, 900, .12, .99);
-</code></pre></div></div>
+</code></pre>
 
 <hr />
 
@@ -568,7 +554,7 @@ like Notch, Peak, Allpass…</p>
 are shown below for each EQ filter type) and had been digitized using the
 Bilinear Transform by Robert Bristow-Johnson: https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// Robert Bristow-Johnson's Biquad Filter - Direct Form 1
+<pre><code class="language-faust">// Robert Bristow-Johnson's Biquad Filter - Direct Form 1
 // https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html
 biquad(i, cf, q) = _ : coefficients(i) : biquadFilter
      with{
@@ -667,7 +653,7 @@ biquad(i, cf, q) = _ : coefficients(i) : biquadFilter
          };
 };
 //process = (1000, 1, _) : biquad(0);
-</code></pre></div></div>
+</code></pre>
 
 <hr />
 
@@ -679,7 +665,7 @@ the topology-preserving transform approach, can be considered as
 a generalization of bilinear transform, zero-delay feedback and trapezoidal integration methods. This results in digital filters having nice amplitude and phase
 responses, nice time-varying behavior and plenty of options for nonlinearities</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// Vadim Zavalishin's Onepole TPT Filter (Topology Preserving Transform)  
+<pre><code class="language-faust">// Vadim Zavalishin's Onepole TPT Filter (Topology Preserving Transform)  
 onePoleTPT(cf, x) = loop ~ _ : ! , si.bus(3)
      with {
          g = tan(cf * PI * ma.T);
@@ -697,11 +683,11 @@ HPTPT(cf, x) = onePoleTPT(cf, x) : (! , _ , !);
 
 // Allpass TPT
 APTPT(cf, x) = onePoleTPT(cf, x) : (!, !, _);
-</code></pre></div></div>
+</code></pre>
 
 <h3 id="vadim-zavalishins-svf-topology-preserving-transform">Vadim Zavalishin’s SVF Topology Preserving Transform</h3>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// Vadim Zavalishin's SVF TPT filter (Topology Preserving Transform)
+<pre><code class="language-faust">// Vadim Zavalishin's SVF TPT filter (Topology Preserving Transform)
 SVFTPT(Q, cf, x) = loop ~ si.bus(2) : (! , ! , _ , _ , _ , _ , _)
      with {
          g = tan(cf * ma.PI * ma.T);
@@ -734,12 +720,18 @@ BP2SVFTPT(Q, cf, x) = SVFTPT(Q, cf, x) : (! , ! , ! , ! , _);
 
 // Bandpass Bandwidth SVF
 BPBWSVFTPT(BW, CF, x) = BPSVF(clip(20000, EPS, (CF / BW)), CF, x);
-</code></pre></div></div>
+</code></pre>
 
+  <nav class="post-nav"><a class="next" href="/jekyll/update/2025/03/04/Digital-Reverberation.html">Digital Reverberation - a tutorial in... &rarr;</a>
+  </nav>
+</article>
 
     </main><footer>
-  
+  <span>© 2026 Luca Spanedda</span>
+  <span><a href="/feed.xml">rss</a></span>
 </footer>
+<link rel="stylesheet" href="/assets/faust/faust-blocks.css">
+<script defer src="/assets/faust/faust-blocks.js"></script>
 </div>
   </body>
 </html>

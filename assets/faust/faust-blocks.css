@@ -1,0 +1,10 @@
+/* Editor Faust al posto dei blocchi ```faust (vedi faust-blocks.js) */
+faust-editor.faust-editor { display: block; margin: 0 0 15px; }
+
+/* in esecuzione l'editor esce dalla colonna di testo (600px) per lasciare spazio ai controlli */
+@media (min-width: 700px) {
+  faust-editor.faust-editor.running {
+    width: min(960px, 94vw);
+    margin-left: calc(50% - min(480px, 47vw));
+  }
+}
