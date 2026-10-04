@@ -1,4 +1,901 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2026-03-29T17:15:51+02:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Luca Spanedda</title><subtitle>(1995) Electroacoustic music composer and performer specializing in computer music. His work explores the dynamic intersections between humans, cybernetic, and acoustic spaces.</subtitle><entry><title type="html">Sine oscillator approximations in FAUST</title><link href="http://localhost:4000/jekyll/update/2025/10/16/Sine-Osc-approximations-in-Faust.html" rel="alternate" type="text/html" title="Sine oscillator approximations in FAUST" /><published>2025-10-16T18:10:18+02:00</published><updated>2025-10-16T18:10:18+02:00</updated><id>http://localhost:4000/jekyll/update/2025/10/16/Sine-Osc-approximations-in-Faust</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2025/10/16/Sine-Osc-approximations-in-Faust.html"><![CDATA[<p>While FAUST provides optimized wavetable-based oscillators (<code class="language-plaintext highlighter-rouge">os.osc</code>), understanding explicit mathematical approximations of sinusoidal functions remains valuable for several reasons: educational insight into DSP fundamentals, scenarios requiring zero memory overhead, and contexts where algorithmic synthesis is preferred over lookup tables.</p>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="https://lucaspanedda.github.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://lucaspanedda.github.io/" rel="alternate" type="text/html" /><updated>2026-10-04T16:28:01+02:00</updated><id>https://lucaspanedda.github.io/feed.xml</id><title type="html">Luca Spanedda</title><subtitle>(1995) Electroacoustic music composer and performer specializing in computer music. His work explores the dynamic intersections between humans, cybernetic, and acoustic spaces.</subtitle><entry><title type="html">Thinking in phase: from a one-sample delay to the Hilbert transform in FAUST</title><link href="https://lucaspanedda.github.io/jekyll/update/2026/10/04/Thinking-in-phase/" rel="alternate" type="text/html" title="Thinking in phase: from a one-sample delay to the Hilbert transform in FAUST" /><published>2026-10-04T12:00:00+02:00</published><updated>2026-10-04T12:00:00+02:00</updated><id>https://lucaspanedda.github.io/jekyll/update/2026/10/04/Thinking-in-phase</id><content type="html" xml:base="https://lucaspanedda.github.io/jekyll/update/2026/10/04/Thinking-in-phase/"><![CDATA[<p>What happens to a signal when you add a copy of itself delayed by a single sample? Following that question step by step leads through FIR and feedback filters, poles and zeros, the comb, the allpass, and the difference between a delay in time and a delay in degrees, up to the Hilbert transform: two chains of allpass filters that let you shift every frequency by the same angle.</p>
+
+<p><strong>Conventions</strong></p>
+
+<ul>
+  <li>All examples use <strong>fs = 44100 Hz</strong>, so Nyquist = 22050 Hz.</li>
+  <li>Faust notation: <code class="language-plaintext highlighter-rouge">x'</code> is x delayed by 1 sample, <code class="language-plaintext highlighter-rouge">x''</code> by 2 samples. In <code class="language-plaintext highlighter-rouge">f ~ g</code> the signal fed back through <code class="language-plaintext highlighter-rouge">g</code> arrives with a 1-sample delay.</li>
+  <li>“Phase delay” is measured in degrees and is positive when the output is <em>late</em>.</li>
+  <li>Click on any figure to open it at full size.</li>
+</ul>
+
+<hr />
+
+<h2 id="1-delay--sum-cancellation-or-reinforcement">1. Delay + sum: cancellation or reinforcement</h2>
+
+<h3 id="11-phase-as-a-wheel">1.1 Phase as a wheel</h3>
+
+<p>Before adding anything, it helps to picture a sinusoid as a point going round a wheel: one full cycle of the sinusoid is one full turn, 360°. At every sample the wheel turns by a fixed angle, which depends on the frequency:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>angle per sample = 360° × f / fs
+</code></pre></div></div>
+
+<p><a href="images/01_phase_wheel.png"><img src="images/01_phase_wheel.png" alt="Phase as a wheel: how far the wheel turns per sample at four frequencies" /></a></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>f</th>
+      <th>one sample is…</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0 Hz</td>
+      <td>0° (the wheel is still)</td>
+    </tr>
+    <tr>
+      <td>2756 Hz</td>
+      <td>22.5°</td>
+    </tr>
+    <tr>
+      <td>5512 Hz</td>
+      <td>45°</td>
+    </tr>
+    <tr>
+      <td>11025 Hz (fs/4)</td>
+      <td>90°: a quarter of a turn</td>
+    </tr>
+    <tr>
+      <td>22050 Hz (fs/2)</td>
+      <td>180°: half a turn, the signal alternates +1, −1, +1…</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>So <strong>delaying by one sample means turning the wheel back by that angle</strong>. The same 1-sample delay is a tiny angle at low frequencies and a big one at high frequencies. Keep this in mind: it is the seed of everything in section 4.</p>
+
+<h3 id="12-adding-the-delayed-copy">1.2 Adding the delayed copy</h3>
+
+<p>Take a sinusoid as input and imagine sweeping its frequency. What happens if we delay it by one sample and add it to the original?</p>
+
+<ul>
+  <li>At <strong>22050 Hz</strong> the delayed copy is half a cycle (180°) late, i.e. upside down: <strong>perfect cancellation</strong>.
+Why? At 44100 samples per second a 22050 Hz sinusoid takes <strong>2 samples</strong> to complete a cycle: one positive, one negative. Delayed by one sample, wherever the original is +1 the copy is −1. They are exactly in opposite phase.</li>
+  <li>Going down in frequency the cancellation decreases <strong>gradually</strong>, but not in a straight line. It follows a cosine:
+<code class="language-plaintext highlighter-rouge">amplitude = 2·|cos(π·f/fs)|</code>
+    <ul>
+      <li>at <strong>11025 Hz</strong> a cycle lasts 4 samples, so 1 sample is a quarter cycle (90°): amplitude <strong>1.41</strong> (√2);</li>
+      <li>at <strong>5512 Hz</strong> a cycle lasts 8 samples, 1 sample = 45°: amplitude <strong>1.85</strong>;</li>
+      <li>at <strong>2756 Hz</strong> a cycle lasts 16 samples, 1 sample = 22.5°: amplitude <strong>1.96</strong>.</li>
+    </ul>
+  </li>
+  <li>At <strong>0 Hz</strong> the two signals are perfectly <strong>in phase</strong>: reinforcement, amplitude <strong>2</strong>.</li>
+</ul>
+
+<p>Where does the cosine come from? On the wheel, x and x’ are two arrows of the same length, separated by the angle of one sample. Their sum is an arrow whose length depends on that angle: 2 when they point the same way (0°), 0 when they point in opposite directions (180°), √2 when they are at right angles (90°). In general it is <code class="language-plaintext highlighter-rouge">2·cos(angle/2)</code>. (Adding arrows on a wheel will come back in section 6.)</p>
+
+<p>Sample by sample (the sum is in green, with its continuous curve):</p>
+
+<p><a href="images/02_fir_sum_samples.png"><img src="images/02_fir_sum_samples.png" alt="Sinusoid, copy delayed by 1 sample, and their sum, at three frequencies" /></a></p>
+
+<p>In the middle panel the green diamonds land at ±1, not ±1.41: the samples simply do not fall on the peak of the sum. The thin green curve shows the true amplitude.</p>
+
+<p>And as a gain curve over the whole spectrum:</p>
+
+<p><a href="images/03_fir_lowpass_highpass.png"><img src="images/03_fir_lowpass_highpass.png" alt="Gain of x + x' and of x − x'" /></a></p>
+
+<p>This is a <strong>FIR</strong> (Finite Impulse Response) <strong>lowpass</strong> filter. If instead of adding we subtract the copy (<code class="language-plaintext highlighter-rouge">x − x'</code>), we turn it upside down ourselves before adding it, and everything flips: a notch at 0 Hz, i.e. a <strong>highpass</strong> (dashed curve).</p>
+
+<pre><code class="language-faust">import("stdfaust.lib");
+
+// 1-sample delay + sum (lowpass) or subtraction (highpass)
+lowpass = _ &lt;: _, mem :&gt; _;           // x + x'
+highpass = _ &lt;: _, (mem : *(-1)) :&gt; _; // x - x'
+
+process = lowpass;
+</code></pre>
+
+<h3 id="13-fir-and-feedback-zeros-and-poles">1.3 FIR and feedback: zeros and poles</h3>
+
+<p>There are two ways of using the delayed copy:</p>
+
+<ul>
+  <li><strong>FIR</strong>: the copy is added <strong>once</strong>. Where the copy arrives upside down, it cancels the original → a <strong>zero</strong>, i.e. a notch in the spectrum.</li>
+  <li><strong>Feedback</strong>: the output goes back to the input, so the copy comes back <strong>again and again</strong>, one lap after the other. Where it comes back in phase, each lap adds to the previous ones and the signal builds up → a <strong>pole</strong>, i.e. a peak. It does the opposite of a zero.</li>
+</ul>
+
+<p>The sign decides where the effect happens:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th> </th>
+      <th>with <code class="language-plaintext highlighter-rouge">+</code></th>
+      <th>with <code class="language-plaintext highlighter-rouge">−</code></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>FIR <code class="language-plaintext highlighter-rouge">x ± x'</code></td>
+      <td>notch at 22050 Hz (lowpass)</td>
+      <td>notch at 0 Hz (highpass)</td>
+    </tr>
+    <tr>
+      <td>one-pole <code class="language-plaintext highlighter-rouge">x ± a·y'</code></td>
+      <td>peak at 0 Hz (lowpass)</td>
+      <td>peak at 22050 Hz</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Why does the one-pole with <code class="language-plaintext highlighter-rouge">−</code> peak at 22050 Hz? The 22050 Hz signal (+1, −1, +1…) arrives inverted after one sample, and the minus sign inverts it again: it comes back in phase and builds up.</p>
+
+<p>FIR and feedback are not symmetric:</p>
+
+<ul>
+  <li><strong>FIR:</strong> one copy can cancel another <strong>exactly</strong> (silence), but as a reinforcement it reaches at most 2 (the original plus one copy).</li>
+  <li><strong>Feedback:</strong> the signal comes back forever, so the reinforcement <strong>accumulates</strong> lap after lap. With a feedback coefficient a = 0.9, at 0 Hz it reaches 10 times the input, i.e. +20 dB. But a total cancellation is never possible.</li>
+</ul>
+
+<h3 id="14-why-the-feedback-needs-a-coefficient">1.4 Why the feedback needs a coefficient</h3>
+
+<p>In the feedback, the coefficient keeps the filter from blowing up. Example with a one-pole (<code class="language-plaintext highlighter-rouge">y = x + a·y'</code>) and a constant input equal to 1 (a “step”):</p>
+
+<ul>
+  <li><strong>without a coefficient (a = 1):</strong> each output is “input + previous output”, so 1, 2, 3, 4… it grows forever. With a &gt; 1 it is even worse: it grows exponentially, and keeps growing after the input stops;</li>
+  <li><strong>with a = 0.9:</strong> only 90% comes back each lap: 1, 1.9, 2.71, 3.44… The steps get smaller and smaller and the output settles at <code class="language-plaintext highlighter-rouge">1 / (1 − a) = 10</code>;</li>
+  <li><strong>with a = 0.5:</strong> it settles at 2, and much faster.</li>
+</ul>
+
+<p><a href="images/04_onepole_step.png"><img src="images/04_onepole_step.png" alt="One-pole with a constant input: a = 1 diverges, a = 0.9 and a = 0.5 settle" /></a></p>
+
+<p>The rule: feedback is stable only if <code class="language-plaintext highlighter-rouge">|a| &lt; 1</code>. The closer a is to 1, the higher the peak, and the <strong>longer</strong> the filter takes to settle (roughly 1/(1 − a) samples: about 10 samples for a = 0.9, 100 for a = 0.99). Remember this “slowness”: it will explain, in section 4, why an allpass delays some frequencies more than others.</p>
+
+<p><a href="images/05_onepole_response.png"><img src="images/05_onepole_response.png" alt="Frequency response of the one-pole for several a" /></a></p>
+
+<p>With a negative a (dashed curve) the peak moves to 22050 Hz, as in the table above.</p>
+
+<pre><code class="language-faust">import("stdfaust.lib");
+
+// one-pole: y = x + a * y'   (~ feeds the output back with a 1-sample delay)
+onepole(a) = + ~ *(a);
+
+process = onepole(0.9);
+</code></pre>
+
+<p>So the coefficient decides how deep the notch is (g, in the FIR) or how high the peak is (a, in the feedback), depending on the kind of filter.</p>
+
+<blockquote>
+  <p><strong>Recap of section 1.</strong> A delayed copy is an angle that grows with frequency. Added once (FIR) it can cancel exactly: a zero, a notch. Fed back (feedback) it can build up: a pole, a peak. The coefficient sets how strong, and in feedback it must stay below 1.</p>
+</blockquote>
+
+<hr />
+
+<h2 id="2-longer-delays-the-comb">2. Longer delays: the comb</h2>
+
+<h3 id="21-the-phase-grows-d-times-faster">2.1 The phase grows D times faster</h3>
+
+<p>With a delay of D samples, the angle of the copy grows <strong>D times faster</strong> with frequency:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>phase shift = 360° × f × D / fs
+</code></pre></div></div>
+
+<p><a href="images/06_delay_phase_lines.png"><img src="images/06_delay_phase_lines.png" alt="Phase shift of the delayed copy for D = 1, 2, 4" /></a></p>
+
+<p>The horizontal lines say what the copy looks like: at 180°, 540°, 900°… it is <strong>inverted</strong>; at 360°, 720°, 1080°… it is <strong>the same again</strong> (inverted twice, four times…). 360° is a full turn of the wheel, so the copy lines up with the original again.</p>
+
+<ul>
+  <li><strong>D = 1</strong> only reaches 180°: a single cancellation, at 22050 Hz;</li>
+  <li><strong>D = 2</strong> reaches 360°: inverted at 11025 Hz, the same again at 22050 Hz;</li>
+  <li><strong>D = 4</strong> reaches 720°: inverted at 5512 and 16537 Hz, the same at 11025 and 22050 Hz.</li>
+</ul>
+
+<p>It helps to check D = 2 sample by sample:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>22050 Hz (period 2 samples):  +1 −1 +1 −1 +1 −1
+  delayed by 2:                ·  · +1 −1 +1 −1    → identical: reinforcement
+11025 Hz (period 4 samples):  +1  0 −1  0 +1  0 −1
+  delayed by 2:                ·  · +1  0 −1  0 +1 → inverted: cancellation
+</code></pre></div></div>
+
+<p><strong>The rule:</strong> a frequency is <strong>reinforced</strong> when, during the delay, it completes a <strong>whole number of cycles</strong> (0, 1, 2…), because the delayed copy lines up with the original. It is <strong>cancelled</strong> when it completes a whole number of cycles <strong>plus a half</strong>. So the peaks of a comb are <strong>every fs/D Hz</strong>. The longer the delay, the more frequencies fit a whole number of cycles inside it, and the more peaks there are: the “teeth” of the comb.</p>
+
+<blockquote>
+  <p><strong>A common misconception:</strong> “if I lengthen the delay by one sample, the peak moves down to half the frequency, then half again.” The peaks do not move down: they <strong>multiply</strong>, and they are spaced fs/D apart. With feedback <code class="language-plaintext highlighter-rouge">+</code>, D = 1 has a peak at 0 Hz; D = 2 at 0 and 22050 Hz; D = 3 at 0 and 14700 Hz. With feedback <code class="language-plaintext highlighter-rouge">−</code> the peaks sit halfway between: D = 1 at 22050 Hz; D = 2 at 11025 Hz; D = 3 at 7350 and 22050 Hz.</p>
+</blockquote>
+
+<h3 id="22-peaks-and-notches">2.2 Peaks and notches</h3>
+
+<p>With feedback (<code class="language-plaintext highlighter-rouge">y = x + g·y[n−D]</code>) the frequencies where the copy comes back <strong>the same</strong> become <strong>peaks</strong> (poles). With the FIR (<code class="language-plaintext highlighter-rouge">x + x[n−D]</code>) the frequencies where it comes back <strong>inverted</strong> become <strong>notches</strong> (zeros). On the right of each row is the “circle” of poles (x) and zeros (o), explained in the next section:</p>
+
+<p><a href="images/07_comb_D2_D4.png"><img src="images/07_comb_D2_D4.png" alt="Comb with D = 2 and D = 4: feedback peaks, FIR notches, poles and zeros" /></a></p>
+
+<pre><code class="language-faust">import("stdfaust.lib");
+
+// comb with delay D: feedback (peaks) and FIR (notches)
+// ~ already adds 1 sample, so the delay inside the feedback is D - 1
+combFB(D, g) = + ~ (@(D - 1) : *(g));   // y = x + g * y[n-D]
+combFIR(D) = _ &lt;: _, @(D) :&gt; _;         // y = x + x[n-D]
+
+process = combFB(4, 0.8);
+</code></pre>
+
+<h3 id="23-the-circle-of-poles-and-zeros">2.3 The circle of poles and zeros</h3>
+
+<p>Now that we have FIR, feedback, coefficients and delays, we can read the “circle” (the <strong>z-plane</strong>). It is a map on which poles and zeros are drawn, and from which the response of a filter can be read:</p>
+
+<ul>
+  <li><strong>The angle on the circle is the frequency.</strong> On the right (0°) is 0 Hz, at the top (90°) is 11025 Hz, on the left (180°) is 22050 Hz. It is the same wheel as in 1.1: one sample of delay at 11025 Hz is a quarter turn.</li>
+  <li><strong>A pole (x) makes a peak at the frequency of its angle.</strong> The closer it is to the edge, the higher and narrower the peak. Towards the centre the peak becomes low and wide. <strong>On the edge or outside</strong>, the filter becomes unstable: it is the a ≥ 1 case of 1.4.</li>
+  <li><strong>A zero (o) makes a notch at the frequency of its angle.</strong> If it sits <strong>exactly on the edge</strong>, the notch is total (silence). The further it moves away from the edge, the shallower the notch.</li>
+</ul>
+
+<p><a href="images/08_z_plane.png"><img src="images/08_z_plane.png" alt="Poles and zeros on the circle and the corresponding response" /></a></p>
+
+<p>From left to right:</p>
+
+<ol>
+  <li><strong>one-pole a = 0.5:</strong> the pole is halfway towards 0 Hz, so the peak is low and wide;</li>
+  <li><strong>a = 0.9:</strong> the pole is close to the edge, so the peak is high (+20 dB) and narrow;</li>
+  <li><strong>a = −0.9:</strong> the same pole, but on the left, so the peak moves to 22050 Hz;</li>
+  <li><strong>FIR x + x’:</strong> a zero on the edge at 22050 Hz, total notch;</li>
+  <li><strong>FIR x + 0.5·x’:</strong> a zero inside the circle, partial notch.</li>
+</ol>
+
+<p>In the D = 4 comb above there are <strong>4 poles</strong> spread around the circle (0, 11025, 22050 Hz, plus the mirror of 11025 Hz below) and <strong>4 zeros</strong> halfway between them. The delay D decides <strong>how many</strong> poles and zeros there are and <strong>where</strong> they sit (every 360°/D). The coefficient decides <strong>how close</strong> they are to the edge.</p>
+
+<p>The lower half of the circle mirrors the upper half: for a real signal it holds the same information. It is the same mirror as in the next section.</p>
+
+<h3 id="24-above-22050-hz-the-mirror-aliasing">2.4 Above 22050 Hz: the mirror (aliasing)</h3>
+
+<p>The phase count could go on above 22050 Hz: with D = 2 there would be a cancellation at 33075 Hz and the phase would line up again at 44100 Hz. But in the digital world those frequencies <strong>do not exist as different frequencies</strong>: two sinusoids at f and at <code class="language-plaintext highlighter-rouge">fs − f</code> produce <strong>exactly the same samples</strong>.</p>
+
+<p><a href="images/09_aliasing_mirror.png"><img src="images/09_aliasing_mirror.png" alt="Two different sinusoids with the same samples, and the mirror at fs/2" /></a></p>
+
+<p>On the left: at 44100 Hz, a 5000 Hz sinusoid and a 39100 Hz one (= 44100 − 5000) go through the same points. The digital system only sees the samples, so it cannot tell them apart. That is why everything above fs/2 folds back as in a mirror: 33075 Hz behaves like 11025 Hz. Looking from 0 to fs/2 is enough.</p>
+
+<p><strong>What about 96 kHz or 192 kHz?</strong> It works the same way, but the mirror moves: it always sits at <strong>half the sampling rate</strong>. On the right of the plot: at 44.1 kHz the folding happens at 22.05 kHz, at 96 kHz at 48 kHz (at 192 kHz it would be at 96 kHz). So:</p>
+
+<ul>
+  <li>every rule in these notes holds, as long as frequencies are measured <strong>as a fraction of fs</strong> (0 Hz, fs/4, fs/2…);</li>
+  <li><strong>one sample lasts less time</strong>: at 96 kHz about 10 µs instead of 23 µs. The lowpass <code class="language-plaintext highlighter-rouge">x + x'</code> has its notch at fs/2 = 48 kHz, outside the audible range, and is almost flat in the audio band. To get the same filter in Hz, the delays must be doubled (or the coefficients recalculated);</li>
+  <li>the advantage of a high fs is more room above the audible range before the mirror.</li>
+</ul>
+
+<hr />
+
+<h2 id="3-the-allpass">3. The allpass</h2>
+
+<p>An allpass is a filter with the <strong>same amplitude at every frequency</strong> that still changes the signal: it changes its <strong>phase</strong>. To see how that is possible, look at its topology. It contains:</p>
+
+<ul>
+  <li>a <strong>FIR</strong> part (direct signal + delayed signal, with a certain sign) that creates <strong>notches</strong>;</li>
+  <li>a part that <strong>feeds back</strong> and fills exactly those notches with <strong>poles</strong>.</li>
+</ul>
+
+<p>The result is a <strong>flat</strong> filter: the same amplitude at every frequency.</p>
+
+<p><a href="images/10_allpass_topology.png"><img src="images/10_allpass_topology.png" alt="Topology of the Schroeder allpass: FIR and feedback in series" /></a></p>
+
+<p>Reading the diagram from the left:</p>
+
+<ol>
+  <li><strong>FIR part (blue):</strong> the signal splits in two: one part is multiplied by −g, the other is delayed by D samples. They are added once: <code class="language-plaintext highlighter-rouge">−g·x + x[n−D]</code>. It is a FIR comb, so it makes <strong>notches</strong> every fs/D Hz.</li>
+  <li><strong>Feedback part (red):</strong> the output comes back delayed by D samples, multiplied by g, and is added to the input: <code class="language-plaintext highlighter-rouge">+ g·y[n−D]</code>. It is a feedback comb, so it makes <strong>peaks</strong> every fs/D Hz, in the same places as the notches.</li>
+</ol>
+
+<p>The two parts on their own, and the result:</p>
+
+<p><a href="images/11_allpass_parts.png"><img src="images/11_allpass_parts.png" alt="Amplitude of the FIR part, of the feedback part, and of their product" /></a></p>
+
+<p>At 0 Hz the FIR has a notch (0.5) and the feedback a peak (2): <code class="language-plaintext highlighter-rouge">0.5 × 2 = 1</code>. At 2205 Hz the FIR has a peak (1.5) and the feedback a notch (0.667): <code class="language-plaintext highlighter-rouge">1.5 × 0.667 = 1</code>. And so on at <strong>every</strong> frequency, so the black line is flat.</p>
+
+<p>Two important points:</p>
+
+<ul>
+  <li>
+    <p><strong>FIR and feedback are in series, not in parallel.</strong> The signal goes through the FIR first and then through the feedback. In series the gains <strong>multiply</strong> (notch 0.5 × peak 2 = 1). In parallel they would add up, and nothing would compensate. In the classic diagram the two parts share the same delay line to save memory, so they look like a single block, but they are two pieces in series.</p>
+
+    <blockquote>
+      <p><strong>A common misconception:</strong> “two separate branches leave x: one is a FIR with delay D and gain g that makes the zeros, the other is a feedback with the same D and g that makes the poles, and they cancel each other.” The idea of poles and zeros compensating is right, but the two parts are <strong>one after the other</strong> (series), not side by side. And, as the next point shows, they do <em>not</em> cancel completely.</p>
+    </blockquote>
+  </li>
+  <li>
+    <p><strong>The FIR coefficients are swapped.</strong> The allpass FIR is “first −g, then 1”, while the feedback is “1, then −g”. It is the <strong>same FIR, reversed in time</strong>. A signal reversed in time has:</p>
+    <ul>
+      <li><strong>the same amplitude</strong> at every frequency, so the same notches;</li>
+      <li><strong>a different phase</strong>.</li>
+    </ul>
+
+    <p>If the FIR were <strong>identical</strong> to the feedback (1, …, −g), it would remove the signal before it enters the loop, and the loop would have nothing left to build up: everything would cancel, amplitude <strong>and phase</strong>. What remains is a wire, which is useless. With the reversed FIR the notches are the same, but the phase is not:</p>
+  </li>
+</ul>
+
+<p><a href="images/12_reversed_fir.png"><img src="images/12_reversed_fir.png" alt="Equal FIR and reversed FIR: same amplitude, different phase of the whole system" /></a></p>
+
+<p>The amplitude compensates, the phase does not. <strong>The allpass only changes the phase.</strong> This is the most important idea in these notes.</p>
+
+<p>The compensation happens <strong>over time</strong>: the impulse response is a tail (<code class="language-plaintext highlighter-rouge">−0.5</code>, <code class="language-plaintext highlighter-rouge">0.75</code>, <code class="language-plaintext highlighter-rouge">0.375</code>, <code class="language-plaintext highlighter-rouge">0.188</code>… every D samples), not a single impulse. On transients you can hear it; on steady sinusoids the volume is flat.</p>
+
+<p><a href="images/13_allpass_impulse.png"><img src="images/13_allpass_impulse.png" alt="Impulse response of the allpass D = 10, g = 0.5" /></a></p>
+
+<pre><code class="language-faust">import("stdfaust.lib");
+
+// Schroeder allpass: FIR and feedback in series, same delay D and same g
+D = 10;
+g = 0.5;
+fir = _ &lt;: *(-g), @(D) :&gt; _;          // -g * x + x[n-D]     (the zeros)
+iir = + ~ (@(D - 1) : *(g));          // y = in + g * y[n-D] (the poles)
+allpass = fir : iir;
+
+// with the FIR equal to the feedback (1, ..., -g) poles and zeros cancel: a wire
+firSame = _ &lt;: _, (@(D) : *(-g)) :&gt; _;
+wire = firSame : iir;
+
+process = allpass;
+</code></pre>
+
+<blockquote>
+  <p><strong>A question that comes up:</strong> “So an allpass is just a neutral delay?” Not quite. If you mix it with the dry signal you do get notches, as with a comb. But an allpass is not a delay of a fixed time: it is a delay that is <strong>different at every frequency</strong>. That is what the next section is about.</p>
+</blockquote>
+
+<hr />
+
+<h2 id="4-time-delay-and-phase-in-degrees-are-two-different-things">4. Time delay and phase in degrees are two different things</h2>
+
+<p>When a frequency comes out “late”, two different things can be measured:</p>
+
+<ul>
+  <li><strong>the time delay</strong>: <em>how long</em> after the input it arrives (in samples or ms);</li>
+  <li><strong>the phase delay</strong>: <em>how many degrees</em> behind the input it is.</li>
+</ul>
+
+<p>They are linked by:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>phase delay (degrees) = 360° × f × time delay (samples) / fs
+</code></pre></div></div>
+
+<p>The same time delay gives different angles at different frequencies: 1 sample is a lot for a fast frequency and very little for a slow one (the wheel of 1.1).</p>
+
+<ul>
+  <li><strong>Pure delay:</strong> every frequency arrives after <strong>the same time</strong>, so the angle grows in a straight line (the lines of section 2). Mixed with x it gives the comb: fixed, evenly spaced notches.</li>
+  <li><strong>Allpass:</strong> every frequency arrives after <strong>a different time</strong>.</li>
+</ul>
+
+<h3 id="41-why-different-times-two-roads">4.1 Why different times: two roads</h3>
+
+<p>First-order allpass with c = −0.9 (the 1-sample allpass used in phasers):</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>y[n] = −0.9·x[n] + x[n−1]  +  0.9·y[n−1]
+       └──── fast road ────┘   └─ slow road ─┘
+</code></pre></div></div>
+
+<ul>
+  <li><strong>The slow road is a one-pole lowpass</strong> (the loop with +0.9 from 1.4). The <strong>lows</strong> go round the loop and build up, but building up takes time (about 10 samples for a = 0.9), so they <strong>come out late</strong>.</li>
+  <li><strong>The fast road is the direct FIR.</strong> In the loop, the <strong>highs</strong> flip sign at each lap and die out, so they come out almost only through the direct road: <strong>at once</strong>.</li>
+  <li>“Flat” says <strong>how much</strong> comes out, not <strong>when</strong>. Part of the signal travels fast, part slowly.</li>
+</ul>
+
+<p>You can see it with the step response (input jumping from 0 to 1):</p>
+
+<p><a href="images/14_allpass_step.png"><img src="images/14_allpass_step.png" alt="Step response of the allpass c = −0.9 compared with the one-pole lowpass" /></a></p>
+
+<p>The edge of the step (highs) comes out at once, at −0.9. The level (lows) arrives after 20–40 samples, as slowly as the one-pole.</p>
+
+<p>The same can be measured frequency by frequency: how long each frequency takes to come out (this is called <em>group delay</em>):</p>
+
+<p><a href="images/15_delay_per_frequency.png"><img src="images/15_delay_per_frequency.png" alt="Delay in samples for each frequency, first-order allpass with several c" /></a></p>
+
+<ul>
+  <li>with <strong>c = −0.9</strong> the lows come out after 19 samples, the highs almost at once;</li>
+  <li>with <strong>c = 0</strong> every frequency comes out after 1 sample: it is a delay;</li>
+  <li>with <strong>c = 0.5</strong> it is the other way round: the highs come out late (the pole is towards 22050 Hz).</li>
+</ul>
+
+<p><strong>Where the loop resonates, the signal stays in it for a long time, so it comes out late.</strong> The FIR can compensate the height of the peak, but it cannot make the loop release earlier what it holds: to do that it would need to know the future.</p>
+
+<pre><code class="language-faust">import("stdfaust.lib");
+
+// first-order allpass: H(z) = (c + z^-1) / (1 + c z^-1)
+// y = c * x + x' - c * y'   (c = 0: a 1-sample delay)
+ap1(c) = _ &lt;: *(c), mem :&gt; (+ ~ *(-c));
+
+process = ap1(-0.9);
+</code></pre>
+
+<blockquote>
+  <p><strong>A question that comes up:</strong> “If the filter is flat and the poles fill the notches, why should different frequencies have different delays?” Because flat amplitude only means that, <em>in the end</em>, the same amount of each frequency comes out. The frequencies near the pole get there by going round the loop many times; the others take the direct road. Same amount, different travel time.</p>
+</blockquote>
+
+<h3 id="42-a-sinusoid-through-the-allpass">4.2 A sinusoid through the allpass</h3>
+
+<p>Send a sinusoid x through the allpass and compare the output with the direct x:</p>
+
+<ul>
+  <li>at <strong>0 Hz</strong> they are in phase;</li>
+  <li>going up in frequency, the output is more and more delayed, in degrees;</li>
+  <li>at <strong>22050 Hz</strong> it is half a cycle (180°) behind;</li>
+  <li>the amplitude is always the same.</li>
+</ul>
+
+<p>The first-order allpass has the same start and end points as the 1-sample delay (0° and 180°). What changes is the road in between:</p>
+
+<p><a href="images/16_phase_delay_vs_allpass.png"><img src="images/16_phase_delay_vs_allpass.png" alt="Phase delay: 1-sample delay and first-order allpass" /></a></p>
+
+<p>On the left with a linear frequency axis, on the right in octaves (like the display of an EQ). With <strong>c = 0</strong> the allpass is exactly the 1-sample delay (the grey line).</p>
+
+<blockquote>
+  <p><strong>Watch out, time versus degrees.</strong> With c = −0.9 the lows have <strong>a lot of time delay</strong> (19 samples) but <strong>few degrees</strong>: a cycle at 100 Hz lasts 441 samples, so 19 samples are only 15°. The highs have almost no time delay but many degrees. “The lows are the most delayed” is true in time and false in degrees.</p>
+
+  <p>On the octave axis (right) each curve looks like a stretched <strong>S</strong>: flat in the lows, steep around one frequency, flat again near 180°. The steep part is where the pole acts, and c moves it left or right.</p>
+</blockquote>
+
+<p>A <strong>comb made allpass</strong> (D = 10) has different phase delays in different parts of the spectrum, in correspondence with the poles of the comb (0, 4410, 8820… Hz):</p>
+
+<p><a href="images/17_comb_allpass_phase.png"><img src="images/17_comb_allpass_phase.png" alt="Phase of a pure 10-sample delay and of the allpass D = 10" /></a></p>
+
+<p>The allpass goes through the same points as the delay (0°, 180°, 360°…), but near the poles the angle climbs steeply and between poles it almost stops.</p>
+
+<blockquote>
+  <p><strong>Rule:</strong> where there is a pole, the angle climbs steeply with frequency, because there the signal has a lot of time delay. The coefficient moves the pole, and with it the climbing zone.</p>
+</blockquote>
+
+<h3 id="43-the-phaser">4.3 The phaser</h3>
+
+<p>Allpass + dry signal → a notch where the angle of the allpass is 180° (the two are in opposite phase). Since c moves the curve, <strong>c moves the notch</strong>:</p>
+
+<p><a href="images/18_phaser_notches.png"><img src="images/18_phaser_notches.png" alt="Phaser with 2 allpass + dry: the notch moves with c" /></a></p>
+
+<p>With c = 0 the two allpass are two samples of delay, and the notch at 11025 Hz is exactly the one of the D = 2 FIR comb of section 2.</p>
+
+<ul>
+  <li>comb = the same time for every frequency → fixed notches;</li>
+  <li>phaser = a different time for each frequency → notches that move.</li>
+</ul>
+
+<pre><code class="language-faust">import("stdfaust.lib");
+
+ap1(c) = _ &lt;: *(c), mem :&gt; (+ ~ *(-c));
+
+// minimal phaser: 2 allpass + dry, c moves the notch
+phaser(c) = _ &lt;: _, (ap1(c) : ap1(c)) :&gt; *(0.5);
+
+process = phaser(-0.5);
+</code></pre>
+
+<p><strong>Try it.</strong> Listen to the difference on noise: on the left a comb (dry + 8-sample delay), on the right a phaser (dry + 4 allpass). Move <code class="language-plaintext highlighter-rouge">c</code> and only the right channel changes.</p>
+
+<pre><code class="language-faust">import("stdfaust.lib");
+
+ap1(c) = _ &lt;: *(c), mem :&gt; (+ ~ *(-c));
+
+// left: dry + pure delay = comb (same time for every frequency: fixed, evenly spaced notches)
+// right: dry + 4 allpass = phaser (different time per frequency: notches move with c)
+comb(D) = _ &lt;: _, @(D) :&gt; *(0.5);
+phaser4(c) = _ &lt;: _, seq(i, 4, ap1(c)) :&gt; *(0.5);
+
+c = hslider("c", -0.7, -0.99, 0.99, 0.01) : si.smoo;
+process = no.noise * 0.5 &lt;: comb(8), phaser4(c);
+</code></pre>
+
+<hr />
+
+<h2 id="5-the-goal-the-same-angle-at-every-frequency">5. The goal: the same angle at every frequency</h2>
+
+<p>A phase shifter wants to move <strong>every</strong> frequency by the <strong>same</strong> angle. For 90°, a quarter of a cycle, the delay would have to equal a quarter of the period of each frequency:</p>
+
+<p><a href="images/19_delay_for_90.png"><img src="images/19_delay_for_90.png" alt="Delay needed for 90° at each frequency" /></a></p>
+
+<p>110 samples at 100 Hz, 11 at 1000 Hz, 1.1 at 10000 Hz: the lows delayed a lot, the highs almost not at all. <strong>A delay cannot do it</strong>, because it gives every frequency the same time.</p>
+
+<p><strong>One allpass cannot do it either.</strong> It does hold the lows longer than the highs, so it goes in the right direction, but its curve crosses 90° at a single frequency:</p>
+
+<p><a href="images/20_one_allpass_vs_x.png"><img src="images/20_one_allpass_vs_x.png" alt="One allpass against x: 90° at a single frequency" /></a></p>
+
+<p>With an allpass tuned to give 90° at 1 kHz, the output is only 11° behind x at 100 Hz and 158° behind at 5000 Hz.</p>
+
+<p>The solution splits into two separate problems, which the next two sections solve one at a time:</p>
+
+<ol>
+  <li><strong>Section 6:</strong> if we already had the signal at 0° and the same signal at 90° (at every frequency), how would we get any other angle? Answer: a crossfade.</li>
+  <li><strong>Section 7:</strong> how do we get the signal at 90°? Answer: with <em>two</em> allpass chains, not one.</li>
+</ol>
+
+<hr />
+
+<h2 id="6-the-crossfade">6. The crossfade</h2>
+
+<h3 id="step-1-two-ingredients">Step 1: two ingredients</h3>
+
+<p>Suppose we have two signals:</p>
+
+<ul>
+  <li><strong>I</strong> = the signal at <strong>0°</strong> (I for <em>in-phase</em>);</li>
+  <li><strong>Q</strong> = the same signal at <strong>90°</strong>, i.e. delayed by a quarter cycle, at every frequency (Q for <em>quadrature</em>, which means “at 90°”).</li>
+</ul>
+
+<p>How to build Q is the topic of section 7. For now, imagine we have it.</p>
+
+<h3 id="step-2-mix-them-with-two-weights">Step 2: mix them with two weights</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>y = I·cos(θ) + Q·sin(θ)
+</code></pre></div></div>
+
+<p>It is a crossfade between I and Q in which the two volumes come from the circle:</p>
+
+<p><a href="images/21_crossfade_theta.png"><img src="images/21_crossfade_theta.png" alt="The crossfade at θ = 0°, 45°, 90°, 180°, 270°" /></a></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>θ</th>
+      <th>weight of I</th>
+      <th>weight of Q</th>
+      <th>output</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0°</td>
+      <td>1</td>
+      <td>0</td>
+      <td>I only</td>
+    </tr>
+    <tr>
+      <td>45°</td>
+      <td>0.707</td>
+      <td>0.707</td>
+      <td>half and half → delayed by 45°</td>
+    </tr>
+    <tr>
+      <td>90°</td>
+      <td>0</td>
+      <td>1</td>
+      <td>Q only</td>
+    </tr>
+    <tr>
+      <td>180°</td>
+      <td>−1</td>
+      <td>0</td>
+      <td>I upside down</td>
+    </tr>
+    <tr>
+      <td>270°</td>
+      <td>0</td>
+      <td>−1</td>
+      <td>Q upside down (270° of delay)</td>
+    </tr>
+    <tr>
+      <td>360°</td>
+      <td>1</td>
+      <td>0</td>
+      <td>I again: a full turn</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>With the negative weights (I upside down is “180°”, Q upside down is “270°”) the crossfade covers the whole turn, not only 0° to 90°.</p>
+
+<h3 id="step-3-why-the-phase-lands-in-between">Step 3: why the phase lands “in between”</h3>
+
+<p>Two sinusoids <strong>of the same frequency</strong>, added together, give another sinusoid of that frequency, with a phase <strong>in between</strong>. The more weight we give to Q, the closer we get to “90° of delay”:</p>
+
+<p><a href="images/22_crossfade_weights.png"><img src="images/22_crossfade_weights.png" alt="Sum of I and Q at 45°, and the weights taken from the circle" /></a></p>
+
+<p>It is the arrow sum of 1.2 again: I and Q are two arrows at right angles on the wheel, and weighting them with cos θ and sin θ gives an arrow at angle θ. In trigonometry this is <code class="language-plaintext highlighter-rouge">cos(a − θ) = cos(a)·cos(θ) + sin(a)·sin(θ)</code>: to shift a cosine by θ, all you need is the cosine itself (I) and its 90° version (Q), mixed with <code class="language-plaintext highlighter-rouge">cos θ</code> and <code class="language-plaintext highlighter-rouge">sin θ</code>.</p>
+
+<h3 id="step-4-why-cos-and-sin">Step 4: why cos and sin</h3>
+
+<p><code class="language-plaintext highlighter-rouge">cos</code> and <code class="language-plaintext highlighter-rouge">sin</code> keep the volume constant, because <code class="language-plaintext highlighter-rouge">cos² θ + sin² θ = 1</code> (Pythagoras on the circle). It is the same law as an <strong>equal-power pan</strong>. With a linear crossfade, halfway (45°) the volume would drop.</p>
+
+<h3 id="step-5-why-it-works-at-every-frequency">Step 5: why it works at every frequency</h3>
+
+<p>The weights <code class="language-plaintext highlighter-rouge">cos θ</code> and <code class="language-plaintext highlighter-rouge">sin θ</code> <strong>do not depend on frequency</strong>: they are just two volumes. So every frequency is shifted by the same θ. And the time adapts by itself:</p>
+
+<p><a href="images/23_crossfade_two_frequencies.png"><img src="images/23_crossfade_two_frequencies.png" alt="45° at 100 Hz and at 1000 Hz: the same angle, different times" /></a></p>
+
+<p>45° is 55 samples at 100 Hz and 5.5 samples at 1000 Hz. That is exactly the “lows delayed a lot, highs a little” of section 5. The hard work, the frequency-dependent part, is done <strong>once</strong>, when building Q. After that, changing θ means turning two volume knobs.</p>
+
+<h3 id="step-6-the-sign">Step 6: the sign</h3>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">y = I·cos θ + Q·sin θ</code> <strong>delays</strong> by θ. This is the version used in the code: the “Phase Shift” slider at 90 means 90° of delay.</li>
+  <li><code class="language-plaintext highlighter-rouge">y = I·cos θ − Q·sin θ</code> (with a minus) turns the wheel the other way: it <strong>advances</strong> by θ. Musically it is the same (advancing by 90° = delaying by 270°), but if the slider must be a delay, the sign must be <code class="language-plaintext highlighter-rouge">+</code>.</li>
+</ul>
+
+<pre><code class="language-faust">import("stdfaust.lib");
+
+// crossfade: from I (0 degrees) and Q (90 degrees) to any angle
+// y = I * cos(theta) + Q * sin(theta): delays by theta degrees
+rotate(degrees) = *(cos(theta)), *(sin(theta)) :&gt; _
+with {
+    theta = degrees * ma.PI / 180.0;
+};
+
+process = rotate(hslider("Phase Shift [unit:°]", 45.0, 0.0, 360.0, 1.0) : si.smoo);
+</code></pre>
+
+<p><strong>Analogy:</strong> the Hilbert transform builds <strong>two loudspeakers</strong>, one at 0° and one at 90°. The crossfade is the <strong>pan</strong> that places the sound anywhere around the circle. Without the crossfade we would only have 0° or 90°.</p>
+
+<p><strong>Building Q is called the Hilbert transform.</strong> So the second problem is: build Q.</p>
+
+<blockquote>
+  <p><strong>Questions that come up</strong></p>
+
+  <p><strong>“If the allpass chains already make the 90°, what does the crossfade control?”</strong> The angle of the output. The allpass chains give two fixed references (0° and 90°); the crossfade, i.e. the slider, chooses where to be between and around them.</p>
+
+  <p><strong>“With a single stage, can I control at most 90°?”</strong> No. 90° is the fixed distance between I and Q, not the range of the slider. Thanks to the negative weights, a single stage covers the whole turn, 0–360°.</p>
+
+  <p><strong>“If I set 1080°, is the output three cycles behind?”</strong> On a steady sinusoid, three whole cycles behind is <em>identical</em> to the original: phase lives on a circle, and 1080° = 3 turns = 0°. A phase shifter cannot delay the <em>attack</em> of a sound by three cycles, because three cycles last 30 ms at 100 Hz but 3 ms at 1 kHz. That would be a delay of a different time at every frequency, a different device. What a range larger than 360° does give, in a feedback loop, is a longer <em>sweep</em>: while θ moves through 1080°, every phase relation is crossed three times.</p>
+</blockquote>
+
+<hr />
+
+<h2 id="7-building-i-and-q">7. Building I and Q</h2>
+
+<h3 id="step-1-a-perfect-q-does-not-exist">Step 1: a perfect Q does not exist</h3>
+
+<p>A constant (0 Hz) has no cycles, so it cannot be “a quarter cycle late”. And near 0 Hz the delays would become huge (plot of section 5): 90° is about 11000 samples at 1 Hz, 110000 at 0.1 Hz… a filter that holds the signal forever. So we accept that below ~20 Hz it does not work (and, by the mirror of 2.4, near 22050 Hz).</p>
+
+<h3 id="step-2-the-trick-do-not-compare-with-x">Step 2: the trick, do not compare with x</h3>
+
+<p>The crossfade only uses I and Q, never x. So we do not need Q to be 90° behind x: we need <strong>Q to be 90° behind I</strong>. And I does not have to be x.</p>
+
+<p>So x goes through <strong>two different chains of allpass</strong>. With respect to x, both shift the phase in a frequency-dependent way. Between them, though, they always stay 90° apart, <strong>like the two rails of a railway</strong>: they bend, but the distance between them stays the same.</p>
+
+<p><a href="images/24_rails_I_Q.png"><img src="images/24_rails_I_Q.png" alt="Vicanek: delay of I and of Q with respect to x, and their distance" /></a></p>
+
+<p>For example: at 100 Hz I is 392° behind x and Q 482°; at 1000 Hz 863° and 953°; at 5000 Hz 1223° and 1313°. Always 90° apart.</p>
+
+<p>The consequence: the output is shifted by θ <strong>with respect to I</strong>, not with respect to x. With θ = 0 we do not get x back, but x after the allpass chain. When comparing or measuring, the right reference is I.</p>
+
+<h3 id="step-3-how-the-two-curves-are-kept-parallel">Step 3: how the two curves are kept “parallel”</h3>
+
+<ul>
+  <li><strong>Allpass filters in series add their angles.</strong> If the first delays a frequency by 30° and the second by 50°, together they make 80°.</li>
+  <li>Each allpass makes a <strong>climb</strong> of 180° around its pole (section 4).</li>
+  <li>The climbs <strong>alternate</strong> between the two branches: Q makes each climb half a step before I. Half a climb = 90°.</li>
+</ul>
+
+<p>Start with a single pair: Q’s pole low (~400 Hz), I’s pole high (~2400 Hz):</p>
+
+<p><a href="images/25_climbs_pair.png"><img src="images/25_climbs_pair.png" alt="One pair of allpass: the two climbs and the distance between them" /></a></p>
+
+<ul>
+  <li><strong>in the lows</strong> neither has climbed yet, so they are close;</li>
+  <li><strong>in the middle</strong> Q has already climbed and I has not yet: distance ~90°;</li>
+  <li><strong>in the highs</strong> both have climbed, so they are close again.</li>
+</ul>
+
+<p>The distance draws a <strong>small hill</strong> topping at ~90°. Between 700 and 1400 Hz this is already a phase shifter (maximum error 1.7°), but over a single octave.</p>
+
+<p>More alternating pairs widen the good zone:</p>
+
+<p><a href="images/26_climbs_N.png"><img src="images/26_climbs_N.png" alt="4 + 4: two staircases with alternating climbs; distance for 1+1, 2+2, 4+4" /></a></p>
+
+<p>Top: with 4 allpass per branch the climbs (▲) alternate, Q, I, Q, I… from lows to highs, and Q always stays half a step ahead. Bottom, the distance between I and Q:</p>
+
+<ul>
+  <li><strong>1 + 1:</strong> ~90° (± 1.7°) only between 700 and 1400 Hz;</li>
+  <li><strong>2 + 2:</strong> ± 8° between 100 and 8000 Hz;</li>
+  <li><strong>4 + 4:</strong> ± 4.8° between 20 and 20000 Hz.</li>
+</ul>
+
+<p>(examples with 1-sample allpass, coefficients optimised by computer)</p>
+
+<h3 id="step-4-the-two-blocks-of-the-phase-shifter">Step 4: the two blocks of the phase shifter</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>x ──► [many allpass, fixed coefficients c] ──► I ──► ×cos θ ──┐
+  └─► [many allpass, other fixed c]        ──► Q ──► ×sin θ ──┴─(+)──► output
+          └── Hilbert: builds the 90° ──┘           └── crossfade: chooses θ ──┘
+</code></pre></div></div>
+
+<ul>
+  <li><strong>Hilbert</strong> is fixed. Its calibration is the set of <strong>coefficients c</strong>, which decide where the poles are, i.e. where the climbs happen. They are not computed by hand: an optimisation finds them (Niemitalo used a genetic algorithm, Vicanek a numerical optimisation, Laurent de Soras’ <em>hiir</em> library a design formula).</li>
+  <li><strong>Crossfade:</strong> <code class="language-plaintext highlighter-rouge">cos</code> and <code class="language-plaintext highlighter-rouge">sin</code> only choose θ. It is the “Phase Shift” slider.</li>
+</ul>
+
+<blockquote>
+  <p><strong>A common confusion:</strong> “so the phase shifter is many allpass filters calibrated with sine and cosine?” No: the two parts are separate. The calibration of the 90° is done by the <strong>coefficients</strong> of the allpass filters. Sine and cosine appear only in the crossfade, as the two volumes that choose θ.</p>
+</blockquote>
+
+<h3 id="step-5-the-brick-of-the-code-a-2-sample-allpass">Step 5: the brick of the code, a 2-sample allpass</h3>
+
+<p>In the code the “brick” is not the 1-sample allpass of the examples, but a <strong>2-sample</strong> one:</p>
+
+<pre><code class="language-faust">tf(c, y, x) = c * (x + y') - x'';   // used as tf(c) ~ _
+</code></pre>
+
+<p><code class="language-plaintext highlighter-rouge">~ _</code> feeds the output back with a 1-sample delay, so inside <code class="language-plaintext highlighter-rouge">tf</code> <code class="language-plaintext highlighter-rouge">y'</code> is the output from 2 samples ago and <code class="language-plaintext highlighter-rouge">x''</code> the input from 2 samples ago:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>y[n] = c·x[n] − x[n−2]  +  c·y[n−2]
+       └─ FIR (fast) ─┘    └ loop (slow) ┘
+</code></pre></div></div>
+
+<p>It is the Schroeder allpass of section 3 with <strong>D = 2</strong>: FIR and loop with the same coefficient, the FIR reversed (with the sign flipped: at 0 Hz each section turns the signal upside down, but with an even number of sections the inversions cancel out). And from section 2 we know that a loop with D = 2 resonates <strong>at 0 Hz and at 22050 Hz at the same time</strong>. So each section makes the same climb as the 1-sample allpass in the lows, plus a second, mirrored climb towards 22050 Hz:</p>
+
+<p><a href="images/27_two_sample_brick.png"><img src="images/27_two_sample_brick.png" alt="A 2-sample section compared with a 1-sample allpass" /></a></p>
+
+<p>This is why the Hilbert of the code works poorly both near 0 Hz and near 22050 Hz: the mirror.</p>
+
+<p>The Q branch has an extra <strong>1-sample</strong> delay (<code class="language-plaintext highlighter-rouge">x'</code>). At 11025 Hz two samples are half a cycle, so every section is transparent there: the only difference between I and Q is <code class="language-plaintext highlighter-rouge">x'</code>, and at 11025 Hz one sample is exactly 90° (the wheel of 1.1). In the lows the sections make almost all of the 90°; going up, more and more of it comes from <code class="language-plaintext highlighter-rouge">x'</code>:</p>
+
+<p><a href="images/28_role_of_x1.png"><img src="images/28_role_of_x1.png" alt="Who makes the 90°: the sections and the 1-sample delay" /></a></p>
+
+<hr />
+
+<h2 id="8-vicaneks-improvement">8. Vicanek’s improvement</h2>
+
+<p>The structure is the same (same brick, two branches, crossfade). Only the <strong>number of allpass</strong> and the <strong>coefficients</strong> change, computed for a higher order. As Oleg Nesterov points out in the mailing-list thread, Niemitalo’s and Vicanek’s filters belong to the same family (polyphase half-band IIR, like the <em>hiir</em> library). Vicanek computed and published <strong>one</strong> set of coefficients for 8 + 8 allpass: one among many possible.</p>
+
+<p>Why “many possible”? A designer like <em>hiir</em> asks for two things: <strong>how many allpass</strong> to use, and <strong>how far</strong> the filter must work, i.e. how close to 0 Hz and to Nyquist. With a fixed number of climbs one can either concentrate them in the middle of the band (the distance stays extremely close to 90°, but the filter gives up earlier in the deep lows) or spread them towards the lows (it works lower, but the distance wobbles more around 90°). Each choice gives a different set of coefficients.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th> </th>
+      <th>allpass per branch</th>
+      <th>maximum error on the 90°</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Niemitalo</td>
+      <td>4 + 4</td>
+      <td>~0.7°</td>
+    </tr>
+    <tr>
+      <td><strong>Vicanek</strong></td>
+      <td><strong>8 + 8</strong></td>
+      <td><strong>~0.001°</strong> (above ~35 Hz)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><a href="images/29_error_niemitalo_vicanek.png"><img src="images/29_error_niemitalo_vicanek.png" alt="Quadrature error of Niemitalo and Vicanek" /></a></p>
+
+<p>More climbs, closer together, make the distance smoother and closer to 90°:</p>
+
+<ul>
+  <li><strong>Niemitalo</strong> wobbles by ±0.7° over the whole band;</li>
+  <li><strong>Vicanek</strong> stays below 0.0015° from ~35 Hz up;</li>
+  <li>below ~20 Hz both give up in the same way. Vicanek used the extra sections to be <strong>more precise</strong>, not to reach <strong>lower</strong>.</li>
+</ul>
+
+<p>When does it matter?</p>
+
+<ul>
+  <li><strong>Slider still:</strong> almost inaudible. 0.7° of error changes the volume by about ±0.05 dB as θ varies.</li>
+  <li><strong>θ moving</strong> (the phase shifter becomes a frequency shifter, see “Try it” below): the error creates a “ghost copy” shifted in the wrong direction. In the worst case it is at <strong>−44 dB</strong> with Niemitalo and <strong>−98 dB</strong> with Vicanek (measured with a 1 kHz sine shifted by +100 Hz: −55 dB versus −99 dB).</li>
+  <li><strong>Many stages in cascade:</strong> the errors add up.</li>
+</ul>
+
+<p><a href="images/30_ghost_copy.png"><img src="images/30_ghost_copy.png" alt="Level of the ghost copy in a frequency shift" /></a></p>
+
+<p>The price: roughly twice the CPU, and the lows come out a little later (more allpass, more “slow road”). At 30 Hz the I branch delays by about 318 samples with Niemitalo and 558 with Vicanek; at 1 kHz about 13 versus 27.</p>
+
+<h3 id="the-code-hilbert_vicanek_phase_shifterdsp">The code: <code class="language-plaintext highlighter-rouge">Hilbert_Vicanek_Phase_Shifter.dsp</code></h3>
+
+<p>Hilbert transform with Vicanek’s coefficients. It has a single stage (slider 0–360°) and a version with N stages in cascade (slider 0–1080°, divided among the stages). It outputs both the reference (real branch, 0°) and the rotated signal; in an acoustic feedback loop (one microphone, one loudspeaker) only the rotated signal is used.</p>
+
+<pre><code class="language-faust">import("stdfaust.lib");
+
+// Phase shifter using the Hilbert transform
+// Martin Vicanek coefficients (8 + 8 allpass)
+// Phase Shifter Using a Hilbert Transformer
+hilbertPHshift(degrees, x) = realPH, output
+with {
+    analytic(x) = real, imaginary
+    with {
+        re_c = (0.0406273391966415, 
+                0.2984386654059753,
+                0.5938455547890998, 
+                0.7953345677003365,
+                0.9040699927853059, 
+                0.9568366727621767,
+                0.9815966237057977, 
+                0.9938718801312583);
+        im_c = (0.1500685240941415, 
+                0.4538477444783975,
+                0.7081016258869689, 
+                0.8589957406397113,
+                0.9353623391637175, 
+                0.9715130669899118,
+                0.9886689766148302, 
+                0.9980623781456869);
+        tf(c, y, x) = c * (x + y') - x'';
+        real =      x  : seq(i, 8, tf(ba.take(i + 1, re_c)) ~ _);
+        imaginary = x' : seq(i, 8, tf(ba.take(i + 1, im_c)) ~ _);
+    };
+    realPH = x : analytic : _, !;
+    quadraturePH = x : analytic : !, _;
+    output = realPH * cos((degrees * ma.PI / 180.0)) + quadraturePH * sin((degrees * ma.PI / 180.0));
+};
+HilbertPhaseShifter = hilbertPHshift(hslider("Phase Shift °", 0.0, 0.0, 360.0, 1.0) : si.smoo);
+
+// N stages in cascade: each stage rotates by (slider / N), total N * (slider / N) = slider
+// reference: x passed N times through the real branch (0° rotation)
+N = 6;
+HilbertPhaseShifterN = _ &lt;: seq(i, N, hilbertPHshift(0.0) : _, !),
+                            seq(i, N, hilbertPHshift(degreesN) : !, _)
+with {
+    degreesN = hslider("Phase Shift N°", 0.0, 0.0, 1080.0, 1.0) / N : si.smoo;
+};
+
+//process = co.compressor_mono(6, -18, 0.001, 0.05) : HilbertPhaseShifter;
+// feedback (1 mic = 1 speaker): rotated output only, the reference is just for testing
+process = co.compressor_mono(6, -18, 0.001, 0.05) : HilbertPhaseShifterN : !, _;
+//process = os.osc(800) : HilbertPhaseShifter;
+//process = os.osc(800) : HilbertPhaseShifterN;
+</code></pre>
+
+<p>Measured on this code: Q − I = 90.00° from 50 Hz to 20 kHz, and the slider at 90 gives 90° of delay with respect to the reference.</p>
+
+<p><strong>Try it: check that I and Q are 90° apart.</strong> If they are, then for a sine of amplitude 1 the outputs at θ and θ + 90° are themselves a 0°/90° pair, and <code class="language-plaintext highlighter-rouge">out(θ)² + out(θ + 90)²</code> must be 1 (Pythagoras again). Add this to the file:</p>
+
+<pre><code class="language-faust">// add to Hilbert_Vicanek_Phase_Shifter.dsp
+// I and Q are 90 degrees apart if out(theta)^2 + out(theta + 90)^2 = 1 for a unit sine
+check(f, theta) = os.osc(f) &lt;: (hilbertPHshift(theta) : !, _),
+                               (hilbertPHshift(theta + 90.0) : !, _) : ^(2) + ^(2);
+
+process = check(1000.0, 37.0), check(20.0, 37.0);
+</code></pre>
+
+<p>At 1 kHz the result stays at 1 within 0.0002 (the limit there is the precision of <code class="language-plaintext highlighter-rouge">os.osc</code> in float, not the filter). At 20 Hz it wobbles by about ±0.014: that is the ~0.8° error of the lowest octave.</p>
+
+<p><strong>Try it: from phase shifter to frequency shifter.</strong> If θ keeps moving at a constant speed, the wheel is pushed round continuously and every frequency moves by the same number of Hz (a <em>Bode</em> frequency shifter). A growing delay lowers the frequency, so θ must decrease to shift up:</p>
+
+<pre><code class="language-faust">// add to Hilbert_Vicanek_Phase_Shifter.dsp
+// theta moving all the time: the phase shifter becomes a frequency shifter
+// a growing delay lowers the frequency, so theta decreases to shift up by df Hz
+fshift(df) = hilbertPHshift(-360.0 * os.phasor(1, df)) : !, _;
+
+process = os.osc(1000.0) : fshift(hslider("Shift [unit:Hz]", 100.0, 0.0, 500.0, 1.0));
+</code></pre>
+
+<p>With a 1 kHz sine and a 100 Hz shift, the output is at 1100 Hz and the ghost copy at 900 Hz is at −98.6 dB. This is also why moving the slider of the phase shifter briefly shifts the pitch while it moves.</p>
+
+<hr />
+
+<h2 id="9-pitfalls-checklist">9. Pitfalls checklist</h2>
+
+<p>These all came up while building and testing the code, and all of them produce a patch that runs but does not do what it should.</p>
+
+<ol>
+  <li><strong>Comparing with x instead of I.</strong> The output is rotated with respect to the real branch I, which is x after the allpass chain. A patch that outputs <code class="language-plaintext highlighter-rouge">x</code> and the rotated signal side by side shows a frequency-dependent difference even at θ = 0. The reference must be I (or, with N stages, x through N real branches).</li>
+  <li><strong>The sign of the crossfade.</strong> <code class="language-plaintext highlighter-rouge">I·cos θ − Q·sin θ</code> advances; <code class="language-plaintext highlighter-rouge">I·cos θ + Q·sin θ</code> delays. If the slider is meant as a delay, use <code class="language-plaintext highlighter-rouge">+</code>.</li>
+  <li><strong>Swapped coefficient lists.</strong> The list starting with <code class="language-plaintext highlighter-rouge">0.0406…</code> goes on the branch <strong>without</strong> <code class="language-plaintext highlighter-rouge">x'</code>, the one starting with <code class="language-plaintext highlighter-rouge">0.1500…</code> on the branch <strong>with</strong> <code class="language-plaintext highlighter-rouge">x'</code>. Swapped, the difference is no longer 90°: about −74° at 1 kHz and −8° at 5 kHz.</li>
+  <li><strong>The same slider value given to every stage of a cascade.</strong> <code class="language-plaintext highlighter-rouge">seq(i, 6, hilbertPHshift(slider))</code> rotates by 6 × slider: with the slider at 1080, that is 6480° = 18 turns, i.e. <strong>no rotation at all</strong>. To get a total of <code class="language-plaintext highlighter-rouge">slider</code> degrees, divide by N inside, as in <code class="language-plaintext highlighter-rouge">HilbertPhaseShifterN</code>.</li>
+  <li><strong>Expecting 1080° to be different from 0° on a still slider.</strong> It is not (section 6). A cascade only lengthens the sweep, at the cost of N times the CPU and N times the delay of the lows. A single stage with a 0–1080 slider gives the same rotation, because cos and sin repeat every 360°.</li>
+</ol>
+
+<hr />
+
+<h2 id="10-summary">10. Summary</h2>
+
+<ol>
+  <li>A delay is an angle that grows with frequency: one sample is 360° × f / fs.</li>
+  <li>A copy added once (FIR) makes notches (zeros); a copy fed back makes peaks (poles). Feedback needs a coefficient below 1.</li>
+  <li>A delay of D samples puts peaks or notches every fs/D Hz: the comb. On the circle, the angle is the frequency and the distance from the edge is the strength.</li>
+  <li>An allpass puts a FIR (notches) and a feedback (peaks) in series, with the FIR reversed in time: the amplitude is flat, the phase is not.</li>
+  <li>In an allpass, frequencies near the pole go round the loop longer and come out later: a different time for each frequency. In degrees this is a climb of 180° around the pole.</li>
+  <li>A phase shifter needs the same angle at every frequency, which no delay and no single allpass can give.</li>
+  <li>If we had I (0°) and Q (90°), a crossfade with cos θ and sin θ would give any angle θ at every frequency.</li>
+  <li>Q cannot be built against x, but it can be built against I: two allpass chains whose climbs alternate stay 90° apart (the Hilbert transform).</li>
+  <li>More allpass per branch, better 90°. Vicanek’s 8 + 8 coefficients bring the error from ~0.7° (Niemitalo’s 4 + 4) to ~0.001°, which matters mostly when θ moves.</li>
+</ol>
+
+<h2 id="references">References</h2>
+
+<ul>
+  <li>Neil Robertson, <em>Phase or Frequency Shifter Using a Hilbert Transformer</em>, DSPRelated: <a href="https://www.dsprelated.com/showarticle/1147.php">https://www.dsprelated.com/showarticle/1147.php</a></li>
+  <li>Martin Vicanek, <em>Reverse IIR</em> (the 8 + 8 coefficients): <a href="https://vicanek.de/articles/ReverseIIR.pdf">https://vicanek.de/articles/ReverseIIR.pdf</a></li>
+  <li>Laurent de Soras, <em>hiir</em> library (designs of any order and transition band): <a href="https://ldesoras.fr/prod.html">https://ldesoras.fr/prod.html</a></li>
+  <li>Olli Niemitalo, 4 + 4 Hilbert IIR (coefficients found with a genetic algorithm)</li>
+  <li><em>faudiostream-users</em> mailing-list thread, “Claude helped cleanup/improvements on the Faust libraries”, August–September 2026</li>
+  <li>Faust libraries: <code class="language-plaintext highlighter-rouge">fi.hilbert</code>, <code class="language-plaintext highlighter-rouge">fi.pospass</code>, <code class="language-plaintext highlighter-rouge">pf.phaser2_mono</code></li>
+</ul>]]></content><author><name></name></author><category term="jekyll" /><category term="update" /><summary type="html"><![CDATA[What happens to a signal when you add a copy of itself delayed by a single sample? Following that question step by step leads through FIR and feedback filters, poles and zeros, the comb, the allpass, and the difference between a delay in time and a delay in degrees, up to the Hilbert transform: two chains of allpass filters that let you shift every frequency by the same angle.]]></summary></entry><entry><title type="html">Sine oscillator approximations in FAUST</title><link href="https://lucaspanedda.github.io/jekyll/update/2025/10/16/Sine-Osc-approximations-in-Faust.html" rel="alternate" type="text/html" title="Sine oscillator approximations in FAUST" /><published>2025-10-16T18:10:18+02:00</published><updated>2025-10-16T18:10:18+02:00</updated><id>https://lucaspanedda.github.io/jekyll/update/2025/10/16/Sine-Osc-approximations-in-Faust</id><content type="html" xml:base="https://lucaspanedda.github.io/jekyll/update/2025/10/16/Sine-Osc-approximations-in-Faust.html"><![CDATA[<p>While FAUST provides optimized wavetable-based oscillators (<code class="language-plaintext highlighter-rouge">os.osc</code>), understanding explicit mathematical approximations of sinusoidal functions remains valuable for several reasons: educational insight into DSP fundamentals, scenarios requiring zero memory overhead, and contexts where algorithmic synthesis is preferred over lookup tables.</p>
 
 <p>Here we examines three distinct approximation strategies—Taylor series expansion, polynomial waveshaping, and rational approximation—with focus on their computational cost and practical implementation trade-offs.</p>
 
@@ -171,7 +1068,7 @@ process = os.phasor(1, si.smoo(hslider("F", 440, 20, 1000, 0.001))) :
 
 <p>While wavetable oscillators remain the industry standard for production environments, understanding these approximation methods provides insight into the computational mechanics of DSP. The polynomial waveshaping approach offers an excellent compromise between efficiency and precision, requiring only ~3× the operations of a wavetable while eliminating memory requirements entirely.</p>
 
-<p>For educational purposes, experimenting with these methods in FAUST reveals how mathematical abstractions translate to actual CPU cycles—a critical skill for optimizing real-time audio processing systems.</p>]]></content><author><name></name></author><category term="jekyll" /><category term="update" /><summary type="html"><![CDATA[While FAUST provides optimized wavetable-based oscillators (os.osc), understanding explicit mathematical approximations of sinusoidal functions remains valuable for several reasons: educational insight into DSP fundamentals, scenarios requiring zero memory overhead, and contexts where algorithmic synthesis is preferred over lookup tables.]]></summary></entry><entry><title type="html">About this filters business - a tutorial on Digital Filters in Faust</title><link href="http://localhost:4000/jekyll/update/2025/03/04/About-this-filters-business.html" rel="alternate" type="text/html" title="About this filters business - a tutorial on Digital Filters in Faust" /><published>2025-03-04T17:10:18+01:00</published><updated>2025-03-04T17:10:18+01:00</updated><id>http://localhost:4000/jekyll/update/2025/03/04/About-this-filters-business</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2025/03/04/About-this-filters-business.html"><![CDATA[<h2 id="preludes-to-filter-syntax-in-faust">Preludes to Filter Syntax in Faust</h2>
+<p>For educational purposes, experimenting with these methods in FAUST reveals how mathematical abstractions translate to actual CPU cycles—a critical skill for optimizing real-time audio processing systems.</p>]]></content><author><name></name></author><category term="jekyll" /><category term="update" /><summary type="html"><![CDATA[While FAUST provides optimized wavetable-based oscillators (os.osc), understanding explicit mathematical approximations of sinusoidal functions remains valuable for several reasons: educational insight into DSP fundamentals, scenarios requiring zero memory overhead, and contexts where algorithmic synthesis is preferred over lookup tables.]]></summary></entry><entry><title type="html">About this filters business - a tutorial on Digital Filters in Faust</title><link href="https://lucaspanedda.github.io/jekyll/update/2025/03/04/About-this-filters-business.html" rel="alternate" type="text/html" title="About this filters business - a tutorial on Digital Filters in Faust" /><published>2025-03-04T17:10:18+01:00</published><updated>2025-03-04T17:10:18+01:00</updated><id>https://lucaspanedda.github.io/jekyll/update/2025/03/04/About-this-filters-business</id><content type="html" xml:base="https://lucaspanedda.github.io/jekyll/update/2025/03/04/About-this-filters-business.html"><![CDATA[<h2 id="preludes-to-filter-syntax-in-faust">Preludes to Filter Syntax in Faust</h2>
 
 <h3 id="constructing-a-delay-line">Constructing a delay line</h3>
 
@@ -848,7 +1745,7 @@ BP2SVFTPT(Q, cf, x) = SVFTPT(Q, cf, x) : (! , ! , ! , ! , _);
 
 // Bandpass Bandwidth SVF
 BPBWSVFTPT(BW, CF, x) = BPSVF(clip(20000, EPS, (CF / BW)), CF, x);
-</code></pre></div></div>]]></content><author><name></name></author><category term="jekyll" /><category term="update" /><summary type="html"><![CDATA[Preludes to Filter Syntax in Faust]]></summary></entry><entry><title type="html">Digital Reverberation - a tutorial in Faust</title><link href="http://localhost:4000/jekyll/update/2025/03/04/Digital-Reverberation.html" rel="alternate" type="text/html" title="Digital Reverberation - a tutorial in Faust" /><published>2025-03-04T17:10:18+01:00</published><updated>2025-03-04T17:10:18+01:00</updated><id>http://localhost:4000/jekyll/update/2025/03/04/Digital%20Reverberation</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2025/03/04/Digital-Reverberation.html"><![CDATA[<p>Digital reverberation is a continually relevant and widely discussed topic in the realms of computer music and Digital Signal Processing, as well as electroacoustic music in general. Its applications and studies have involved both commercial and academic sectors. Consequently, over time, a complex history has developed, characterized by numerous ramifications and implications, leading to a proliferation of various methods and implementation topologies. In this study, we will delve into the subject in detail, examining the main existing implementations.</p>
+</code></pre></div></div>]]></content><author><name></name></author><category term="jekyll" /><category term="update" /><summary type="html"><![CDATA[Preludes to Filter Syntax in Faust]]></summary></entry><entry><title type="html">Digital Reverberation - a tutorial in Faust</title><link href="https://lucaspanedda.github.io/jekyll/update/2025/03/04/Digital-Reverberation.html" rel="alternate" type="text/html" title="Digital Reverberation - a tutorial in Faust" /><published>2025-03-04T17:10:18+01:00</published><updated>2025-03-04T17:10:18+01:00</updated><id>https://lucaspanedda.github.io/jekyll/update/2025/03/04/Digital%20Reverberation</id><content type="html" xml:base="https://lucaspanedda.github.io/jekyll/update/2025/03/04/Digital-Reverberation.html"><![CDATA[<p>Digital reverberation is a continually relevant and widely discussed topic in the realms of computer music and Digital Signal Processing, as well as electroacoustic music in general. Its applications and studies have involved both commercial and academic sectors. Consequently, over time, a complex history has developed, characterized by numerous ramifications and implications, leading to a proliferation of various methods and implementation topologies. In this study, we will delve into the subject in detail, examining the main existing implementations.</p>
 
 <h2 id="reverberation">Reverberation</h2>
 
@@ -1831,7 +2728,7 @@ Keith Barr’s reverb architecture <a href="https://web.archive.org/web/20210111
 
 <p>Dattorro Convex Optimization of a Reverberator <a href="https://www.convexoptimization.com/wikimization/index.php/Dattorro_Convex_Optimization_of_a_Reverberator">Dattorro Convex Optimization of a Reverberator - Wikimization</a></p>
 
-<p>primes under 10.000 https://www.matematika.it/public/allegati/34/Numeri_primi_minori_di_10000_1_3.pdf</p>]]></content><author><name></name></author><category term="jekyll" /><category term="update" /><summary type="html"><![CDATA[Digital reverberation is a continually relevant and widely discussed topic in the realms of computer music and Digital Signal Processing, as well as electroacoustic music in general. Its applications and studies have involved both commercial and academic sectors. Consequently, over time, a complex history has developed, characterized by numerous ramifications and implications, leading to a proliferation of various methods and implementation topologies. In this study, we will delve into the subject in detail, examining the main existing implementations.]]></summary></entry><entry><title type="html">Exploring Pseudo-Random and Stochastic Signals in Digital Sound Synthesis</title><link href="http://localhost:4000/jekyll/update/2025/03/04/Exploring-Pseudo-Random.html" rel="alternate" type="text/html" title="Exploring Pseudo-Random and Stochastic Signals in Digital Sound Synthesis" /><published>2025-03-04T17:10:18+01:00</published><updated>2025-03-04T17:10:18+01:00</updated><id>http://localhost:4000/jekyll/update/2025/03/04/Exploring-Pseudo-Random</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2025/03/04/Exploring-Pseudo-Random.html"><![CDATA[<p>Random and stochastic signals in synthesis can be useful for implementing time-varying oscillators and/or control signals. A common issue in digital synthesizers and audio effects is that the sounds often differ significantly from those produced in the physical world, due to the precise, time-invariant nature of signal generation in the digital domain.</p>
+<p>primes under 10.000 https://www.matematika.it/public/allegati/34/Numeri_primi_minori_di_10000_1_3.pdf</p>]]></content><author><name></name></author><category term="jekyll" /><category term="update" /><summary type="html"><![CDATA[Digital reverberation is a continually relevant and widely discussed topic in the realms of computer music and Digital Signal Processing, as well as electroacoustic music in general. Its applications and studies have involved both commercial and academic sectors. Consequently, over time, a complex history has developed, characterized by numerous ramifications and implications, leading to a proliferation of various methods and implementation topologies. In this study, we will delve into the subject in detail, examining the main existing implementations.]]></summary></entry><entry><title type="html">Exploring Pseudo-Random and Stochastic Signals in Digital Sound Synthesis</title><link href="https://lucaspanedda.github.io/jekyll/update/2025/03/04/Exploring-Pseudo-Random.html" rel="alternate" type="text/html" title="Exploring Pseudo-Random and Stochastic Signals in Digital Sound Synthesis" /><published>2025-03-04T17:10:18+01:00</published><updated>2025-03-04T17:10:18+01:00</updated><id>https://lucaspanedda.github.io/jekyll/update/2025/03/04/Exploring-Pseudo-Random</id><content type="html" xml:base="https://lucaspanedda.github.io/jekyll/update/2025/03/04/Exploring-Pseudo-Random.html"><![CDATA[<p>Random and stochastic signals in synthesis can be useful for implementing time-varying oscillators and/or control signals. A common issue in digital synthesizers and audio effects is that the sounds often differ significantly from those produced in the physical world, due to the precise, time-invariant nature of signal generation in the digital domain.</p>
 
 <p>In computers, time-varying details that occur unpredictably in the physics of sound must be carefully sequenced, often to the point of exhausting the resources of the computer (and the programmer).</p>
 
@@ -2287,7 +3184,7 @@ process = (os.phasor(1, 100) - 0.1 &lt; 0.0) : randomWalk(1212, 10, 2);
 
 <p>This last code is an example of how one can generate a non-linear, fully functioning control signal from a stochastic model like the random walk, or from other generators to obtain complex behaviors. We can address the resolution of this kind of problem by focusing on continuity, since from the <strong>RAN</strong> object in <strong>Music V</strong>. In his book on computer music (Mathews, <em>The Technology of Computer Music</em>), Max Mathews explains how, in the random number generator, he achieved a continuous function using linear interpolation methods.</p>
 
-<p>The calibration of non-linear signal processing is an art in itself, involving a range of functional models beyond the one described here. It requires studying and refining the response of control signals and is closely tied to the type of analysis and behavior a composer or programmer seeks to achieve in their algorithm. Given the importance of this topic, it will require further focus, which I will explore in more depth in future posts.</p>]]></content><author><name></name></author><category term="jekyll" /><category term="update" /><summary type="html"><![CDATA[Random and stochastic signals in synthesis can be useful for implementing time-varying oscillators and/or control signals. A common issue in digital synthesizers and audio effects is that the sounds often differ significantly from those produced in the physical world, due to the precise, time-invariant nature of signal generation in the digital domain.]]></summary></entry><entry><title type="html">Test</title><link href="http://localhost:4000/jekyll/update/2024/01/01/welcome-to-jekyll.html" rel="alternate" type="text/html" title="Test" /><published>2024-01-01T17:10:18+01:00</published><updated>2024-01-01T17:10:18+01:00</updated><id>http://localhost:4000/jekyll/update/2024/01/01/welcome-to-jekyll</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2024/01/01/welcome-to-jekyll.html"><![CDATA[<h1 id="faust-code-test">Faust Code Test</h1>
+<p>The calibration of non-linear signal processing is an art in itself, involving a range of functional models beyond the one described here. It requires studying and refining the response of control signals and is closely tied to the type of analysis and behavior a composer or programmer seeks to achieve in their algorithm. Given the importance of this topic, it will require further focus, which I will explore in more depth in future posts.</p>]]></content><author><name></name></author><category term="jekyll" /><category term="update" /><summary type="html"><![CDATA[Random and stochastic signals in synthesis can be useful for implementing time-varying oscillators and/or control signals. A common issue in digital synthesizers and audio effects is that the sounds often differ significantly from those produced in the physical world, due to the precise, time-invariant nature of signal generation in the digital domain.]]></summary></entry><entry><title type="html">Test</title><link href="https://lucaspanedda.github.io/jekyll/update/2024/01/01/welcome-to-jekyll.html" rel="alternate" type="text/html" title="Test" /><published>2024-01-01T17:10:18+01:00</published><updated>2024-01-01T17:10:18+01:00</updated><id>https://lucaspanedda.github.io/jekyll/update/2024/01/01/welcome-to-jekyll</id><content type="html" xml:base="https://lucaspanedda.github.io/jekyll/update/2024/01/01/welcome-to-jekyll.html"><![CDATA[<h1 id="faust-code-test">Faust Code Test</h1>
 
 <iframe id="faust-frame" src="/assets/faust/faust.html" style="width:100%; height:100%; border:none;"></iframe>
 

@@ -245,4 +245,38 @@ code {
   height: auto;
 }
 
+/* Images, tables and quotes inside posts */
+main img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 10px auto 15px;
+}
+
+main a:hover img {
+  opacity: 0.85;
+}
+
+main table {
+  border-collapse: collapse;
+  margin: 0 0 15px;
+}
+
+main th, main td {
+  border: var(--border);
+  padding: 2px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+main blockquote {
+  border-left: var(--border);
+  margin: 0 0 15px;
+  padding-left: 12px;
+}
+
+main a:hover:has(img) {
+  background-color: transparent;
+}
+
 /*# sourceMappingURL=main.css.map */
